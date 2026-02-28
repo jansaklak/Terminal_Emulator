@@ -136,16 +136,34 @@ public class TerminalApp extends Application {
                     executeCommand(command);
                     logCommandToFile(command);
                     inputField.clear();
+                    // Po zatwierdzeniu ustawiamy indeks na koniec listy historii
                     curr_command_index = command_history.size();
                 }
-            }   else if (ctrlC.match(event)){
-//                Obsługa Ctrl+C - do poprawy
-            if (out != null) {
-                out.println("__SIGINT__");
+            } else if (event.getCode() == KeyCode.UP) {
+                // Strzałka w górę: cofamy się w historii
+                if (curr_command_index > 0) {
+                    curr_command_index--;
+                    updateInputFromHistory();
+                }
+                event.consume(); // Zapobiega domyślnemu zachowaniu kursora
+            } else if (event.getCode() == KeyCode.DOWN) {
+                // Strzałka w dół: idziemy do nowszych komend
+                if (curr_command_index < command_history.size() - 1) {
+                    curr_command_index++;
+                    updateInputFromHistory();
+                } else {
+                    // Jeśli wyjdziemy poza historię, czyścimy pole
+                    curr_command_index = command_history.size();
+                    inputField.clear();
+                }
+                event.consume();
+            } else if (ctrlC.match(event)) {
+                if (out != null) {
+                    out.println("__SIGINT__");
+                }
+                inputField.clear();
+                event.consume();
             }
-            inputField.clear();
-            event.consume();
-        }
         });
 
         Scene scene = new Scene(root, 1024, 768);

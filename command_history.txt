@@ -139,3 +139,25 @@
 [2026-02-28 21:29:11] show tables;
 [2026-02-28 21:29:25] show tables;
 [2026-02-28 21:29:27] show tables;
+[2026-02-28 21:57:02] show tables;
+[2026-02-28 21:57:05] show tables;
+[2026-02-28 22:01:39] select * from users
+[2026-02-28 22:01:40] ;
+[2026-02-28 22:01:43] show tables;
+[2026-02-28 22:01:50] select * from users;
+[2026-02-28 22:01:55] select * from users;
+[2026-02-28 22:01:55] select * from users;
+[2026-02-28 22:01:56] select * from users;
+[2026-02-28 22:01:56] select * from users;
+[2026-02-28 22:01:59] select * from users;
+[2026-02-28 22:02:14] select * from users;
+[2026-02-28 22:02:17] select * from users;
+[2026-02-28 22:10:17] select * from users;
+[2026-02-28 22:14:25] help
+[2026-02-28 22:14:28] help2
+[2026-02-28 22:14:52] admin
+[2026-02-28 22:14:53] password
+[2026-02-28 22:14:56] admin
+[2026-02-28 22:15:01] select * from users;
+[2026-02-28 22:15:05] select * from users;
+[2026-02-28 22:15:08] admin
