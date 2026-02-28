@@ -1,7 +1,7 @@
 Aby urchomić:
-    W folderze serwer uruchamiamy
+    W folderze Server uruchamiamy
         docker-compose up --build
-    Następnie uruchamiamy projekt (Launcher)
+    Następnie uruchamiamy projekt java (Launcher)
         domyślna nazwa: admin
         domyślne hasło: password
-    Póki co działa tylko konfiguracja LinuxTerminal
+    Póki co działa tylko konfiguracja LinuxTerminal (powinna wczytać zawartą w Serwerze bazę danych)
