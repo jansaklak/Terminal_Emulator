@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_lab
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: labdb
+      MYSQL_USER: labuser
+      MYSQL_PASSWORD: labpass
+    ports:
+      - "3306:3306"
+    networks:
+      - lab-net
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  terminal-server:
+    build: .
+    container_name: python_gateway
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - lab-net
+    depends_on:
+      - mysql
+
+networks:
+  lab-net:
+    name: lab-net
