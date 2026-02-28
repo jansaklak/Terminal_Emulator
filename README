@@ -1,0 +1,7 @@
+Aby urchomić:
+    W folderze serwer uruchamiamy
+        docker-compose up --build
+    Następnie uruchamiamy projekt (Launcher)
+        domyślna nazwa: admin
+        domyślne hasło: password
+    Póki co działa tylko konfiguracja LinuxTerminal
