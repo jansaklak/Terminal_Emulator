@@ -35,5 +35,7 @@ build/
 ### VS Code ###
 .vscode/
 
-### Mac OS asd ###
+### Mac OS ###
 .DS_Store
+
+.Server/logs/
