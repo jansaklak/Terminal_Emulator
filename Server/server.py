@@ -52,26 +52,25 @@ def handle_client(conn, addr):
     threading.Thread(target=read_from_pty, daemon=True).start()
 
     try:
-    # Rozpoczęcie nasłuchu od klienta.
-    while True:
+        while True:
 
-        data = conn.recv(1024).decode('utf-8')
-        # Jeśli dane są puste - klient zamknął połączenie.
-        if not data: break
-        
-        # Sprawdzenie, czy otrzymano naciśnięcie TAB.
-        if data.startswith("TAB_REQ:"):
-            # Wycięcie prefiksu polecenia, który użytkownik zaczął wpisywać.
-            prefix = data.split(":", 1)[1]
-            # \x15 to Ctrl+U (czyści linię), potem wpisujemy prefix i wysyłamy dwa tabulatory (\t\t).
-            os.write(master_fd, b"\x15" + prefix.encode() + b"\t\t")
-            
-        elif data == "__SIGINT__":
-            os.write(master_fd, b"\x03")
-            
-        else:
-            # Przekazujemy komende - dodajemy enter.
-            os.write(master_fd, (data + "\n").encode())
+            data = conn.recv(1024).decode('utf-8')
+            # Jeśli dane są puste - klient zamknął połączenie.
+            if not data: break
+
+            # Sprawdzenie, czy otrzymano naciśnięcie TAB.
+            if data.startswith("TAB_REQ:"):
+                # Wycięcie prefiksu polecenia, który użytkownik zaczął wpisywać.
+                prefix = data.split(":", 1)[1]
+                # \x15 to Ctrl+U (czyści linię), potem wpisujemy prefix i wysyłamy dwa tabulatory (\t\t).
+                os.write(master_fd, b"\x15" + prefix.encode() + b"\t\t")
+
+            elif data == "__SIGINT__":
+                os.write(master_fd, b"\x03")
+
+            else:
+                # Przekazujemy komende - dodajemy enter.
+                os.write(master_fd, data.encode())
 
     finally:
         # Zamknięcie głównego deskryptora wirtualnego terminala (PTY).
