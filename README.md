@@ -14,6 +14,7 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 - **JediTerm (2.65):** Rdzeń emulatora terminala (JetBrains).
 - **Maven:** Zarządzanie projektem i zależnościami.
 - **JSON (org.json):** Protokół komunikacyjny z serwerem.
+- **Docker** Strona serwera z zainstalowanym MySQL
 
 ## Struktura Projektu
 ```text
@@ -29,6 +30,7 @@ src/main/java/com/example/terminalapp/
 ### Wymagania
 - JDK 18 lub nowsze.
 - Maven (dołączony wrapper `mvnw` w projekcie).
+- Docker
 
 ### Kompilacja i start
 Aby skompilować projekt i uruchomić aplikację, wykonaj poniższe polecenia w terminalu:
