@@ -16,19 +16,32 @@ services:
       - lab-net
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   terminal-server:
-    build: .
+    build:
+      context: .
     container_name: python_gateway
+    restart: always
     ports:
       - "5000:5000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/var/log/terminal-server
     networks:
       - lab-net
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
 networks:
   lab-net:
     name: lab-net
+
+volumes:
+  mysql_data:
