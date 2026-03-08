@@ -1,0 +1,292 @@
+{
+    "HOST": "0.0.0.0",
+    "PORT": 5000,
+    "LOG_DIR": "/var/log/terminal-server",
+    "USERS": {
+        "imie_naz": {
+            "username": "imie_naz",
+            "password": "801115c7",
+            "display_name": "imie_nazwisko",
+            "groups": [
+                "bazy1",
+                "bazy2",
+                "bazy3"
+            ]
+        },
+        "grzegorz_now": {
+            "username": "grzegorz_now",
+            "password": "d2f3a1a8",
+            "display_name": "Grzegorz_Nowak",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "adam_kow": {
+            "username": "adam_kow",
+            "password": "ea332f1f",
+            "display_name": "Adam_Kowalski",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "anna_iks": {
+            "username": "anna_iks",
+            "password": "77f97b91",
+            "display_name": "Anna_Iksińska",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "filip_bła": {
+            "username": "filip_bła",
+            "password": "cddd4a45",
+            "display_name": "Filip_Błasiak",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "grzegorz_kli": {
+            "username": "grzegorz_kli",
+            "password": "8fbeaf78",
+            "display_name": "Grzegorz_Klimczak",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "adam_mic": {
+            "username": "adam_mic",
+            "password": "2372258f",
+            "display_name": "Adam_Mickiewicz",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "juliusz_sło": {
+            "username": "juliusz_sło",
+            "password": "d338381a",
+            "display_name": "Juliusz_Słowacki",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "maria_skł": {
+            "username": "maria_skł",
+            "password": "97133cba",
+            "display_name": "Maria_Skłodowska",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "leopold_maj": {
+            "username": "leopold_maj",
+            "password": "7d08e84b",
+            "display_name": "Leopold_Majsterek",
+            "groups": [
+                "bazy1"
+            ]
+        },
+        "mieczysław_wiś": {
+            "username": "mieczysław_wiś",
+            "password": "9784c91c",
+            "display_name": "Mieczysław_Wiśniewski",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "damian_dąb": {
+            "username": "damian_dąb",
+            "password": "580427b0",
+            "display_name": "Damian_Dąbrowski",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "dawid_lew": {
+            "username": "dawid_lew",
+            "password": "fcd2471a",
+            "display_name": "Dawid_Lewandowski",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "przemysław_wój": {
+            "username": "przemysław_wój",
+            "password": "73ae22d6",
+            "display_name": "Przemysław_Wójcik",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "sebastian_kam": {
+            "username": "sebastian_kam",
+            "password": "1a28b470",
+            "display_name": "Sebastian_Kamiński",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "czesław_kow": {
+            "username": "czesław_kow",
+            "password": "77118ec4",
+            "display_name": "Czesław_Kowalczyk",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "leszek_zie": {
+            "username": "leszek_zie",
+            "password": "39a53f0f",
+            "display_name": "Leszek_Zieliński",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "daniel_szy": {
+            "username": "daniel_szy",
+            "password": "391f4d48",
+            "display_name": "Daniel_Szymański",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "waldemar_woź": {
+            "username": "waldemar_woź",
+            "password": "bd7b0c31",
+            "display_name": "Waldemar_Woźniak",
+            "groups": [
+                "bazy2"
+            ]
+        },
+        "agnieszka_sob": {
+            "username": "agnieszka_sob",
+            "password": "d35510e5",
+            "display_name": "Agnieszka_Sobczak",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "waldemar_bąk": {
+            "username": "waldemar_bąk",
+            "password": "52534db5",
+            "display_name": "Waldemar_Bąk",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "helena_tom": {
+            "username": "helena_tom",
+            "password": "d1001e0f",
+            "display_name": "Helena_Tomaszewska",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "filip_kow": {
+            "username": "filip_kow",
+            "password": "28b6e43c",
+            "display_name": "Filip_Kowalczyk",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "marzena_kwa": {
+            "username": "marzena_kwa",
+            "password": "372503e1",
+            "display_name": "Marzena_KWasilewska",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "adam_gło": {
+            "username": "adam_gło",
+            "password": "4d7f7c19",
+            "display_name": "Adam_Głowacki",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "mazur_sło": {
+            "username": "mazur_sło",
+            "password": "643cc5e6",
+            "display_name": "Mazur_Słowacki",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "maria_maz": {
+            "username": "maria_maz",
+            "password": "9f035aa8",
+            "display_name": "Maria_Mazurek",
+            "groups": [
+                "bazy3"
+            ]
+        },
+        "leopold_szu": {
+            "username": "leopold_szu",
+            "password": "1861681d",
+            "display_name": "Leopold_Szulc",
+            "groups": [
+                "bazy3"
+            ]
+        }
+    },
+    "CONFIGS": {
+        "Bazy1": {
+            "cmd": [
+                "docker", "run", "--rm", "-it",
+                "--name", "mysql_client_{user}",
+                "--network", "lab-net",
+                "--memory", "256m",
+                "--cpus", "0.5",
+                "mysql:8.0",
+                "mysql", "-hmysql_lab", "-ulabuser", "-plabpass", "labdb"
+            ],
+            "description": "MySQL labdb (użytkownik labuser)"
+        },
+        "LinuxTerminal": {
+            "cmd": [
+                "docker", "run", "--rm", "-it",
+                "--name", "term_{user}",
+                "--hostname", "{user}-lab",
+                "--memory", "256m",
+                "--cpus", "0.5",
+                "ubuntu:22.04",
+                "/bin/bash"
+            ],
+            "description": "Powłoka bash (Ubuntu)"
+        },
+        "BazyRoot": {
+            "cmd": [
+                "docker",
+                "run",
+                "--rm",
+                "-it",
+                "--network",
+                "lab-net",
+                "--memory",
+                "256m",
+                "--cpus",
+                "0.5",
+                "mysql:8.0",
+                "mysql",
+                "-hmysql_lab",
+                "-uroot",
+                "-prootpass",
+                "labdb"
+            ],
+            "description": "MySQL labdb (root)"
+        },
+        "ResetDatabase": {
+            "cmd": [
+                "docker",
+                "exec",
+                "-i",
+                "mysql_lab",
+                "sh",
+                "-c",
+                "mysql -uroot -prootpass labdb < /docker-entrypoint-initdb.d/init.sql && echo 'Baza danych została zresetowana.' "
+            ],
+            "description": "Przywraca bazę danych do stanu początkowego"
+        }
+    }
+}

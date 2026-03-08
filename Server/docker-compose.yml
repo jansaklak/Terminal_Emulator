@@ -33,11 +33,23 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./logs:/var/log/terminal-server
+      - .:/app
     networks:
       - lab-net
     depends_on:
       mysql:
         condition: service_healthy
+
+  admin-panel:
+    build: .
+    container_name: admin_panel
+    command: python3 admin_panel.py
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    networks:
+      - lab-net
 
 networks:
   lab-net:
