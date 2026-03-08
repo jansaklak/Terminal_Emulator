@@ -1,13 +1,13 @@
 package com.example.terminalapp;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -24,13 +24,11 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Okno logowania.
- *
- * Użytkownik podaje numeryczny kod dostępu i wybiera konfigurację.
- * Po kliknięciu "Połącz" klient:
- *   1. Otwiera gniazdo TCP do serwera.
- *   2. Wysyła handshake JSON: {"code":"...", "config":"..."}
- *   3. Odczytuje odpowiedź JSON z serwera.
- *   4. W przypadku sukcesu otwiera okno terminala; w razie błędu wyświetla komunikat.
+ * Proces:
+ * 1. Użytkownik podaje dane serwera, login i hasło.
+ * 2. Po kliknięciu "Połącz", klient wysyła dane do serwera.
+ * 3. Jeśli dane są poprawne, serwer odsyła listę dostępnych konfiguracji.
+ * 4. UI zmienia się dynamicznie na listę przycisków wyboru środowiska.
  */
 public class LoginScreen {
 
@@ -48,7 +46,6 @@ public class LoginScreen {
     public void show() {
         primaryStage.setTitle("Terminal – logowanie");
 
-        // Layout
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
@@ -61,7 +58,7 @@ public class LoginScreen {
         title.setFill(Color.web("#cdd6f4"));
         grid.add(title, 0, 0, 2, 1);
 
-        // Host serwera
+        // Host
         Label hostLabel = new Label("Serwer:");
         hostLabel.setTextFill(Color.web("#a6adc8"));
         grid.add(hostLabel, 0, 1);
@@ -69,7 +66,7 @@ public class LoginScreen {
         hostField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4;");
         grid.add(hostField, 1, 1);
 
-        // Port serwera
+        // Port
         Label portLabel = new Label("Port:");
         portLabel.setTextFill(Color.web("#a6adc8"));
         grid.add(portLabel, 0, 2);
@@ -77,58 +74,40 @@ public class LoginScreen {
         portField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4;");
         grid.add(portField, 1, 2);
 
-        // Kod dostępu
-        Label codeLabel = new Label("Kod dostępu:");
-        codeLabel.setTextFill(Color.web("#a6adc8"));
-        grid.add(codeLabel, 0, 3);
-        PasswordField codeField = new PasswordField();
-        codeField.setPromptText("np. 1234");
-        codeField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4; -fx-prompt-text-fill: #585b70;");
-        grid.add(codeField, 1, 3);
+        // Login
+        Label loginLabel = new Label("Login:");
+        loginLabel.setTextFill(Color.web("#a6adc8"));
+        grid.add(loginLabel, 0, 3);
+        TextField loginField = new TextField();
+        loginField.setPromptText("użytkownik");
+        loginField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4; -fx-prompt-text-fill: #585b70;");
+        grid.add(loginField, 1, 3);
 
-        // Konfiguracja
-        Label cfgLabel = new Label("Konfiguracja:");
-        cfgLabel.setTextFill(Color.web("#a6adc8"));
-        grid.add(cfgLabel, 0, 4);
-        ComboBox<String> cfgBox = new ComboBox<>(FXCollections.observableArrayList(
-                "Bazy1", "BazyRoot", "ResetDatabase", "LinuxTerminal"
-        ));
-        cfgBox.getSelectionModel().selectFirst();
-        cfgBox.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4; -fx-prompt-text-fill: #cdd6f4;");
-        cfgBox.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    setTextFill(Color.web("#cdd6f4"));
-                }
-            }
-        });
-        grid.add(cfgBox, 1, 4);
+        // Hasło
+        Label passwordLabel = new Label("Hasło:");
+        passwordLabel.setTextFill(Color.web("#a6adc8"));
+        grid.add(passwordLabel, 0, 4);
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("hasło");
+        passwordField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4; -fx-prompt-text-fill: #585b70;");
+        grid.add(passwordField, 1, 4);
 
-        // Przycisk połączenia
-        Button connectBtn = new Button("Połącz");
-        connectBtn.setStyle(
-                "-fx-background-color: #89b4fa; -fx-text-fill: #1e1e2e; " +
-                        "-fx-font-weight: bold; -fx-cursor: hand;");
+        // Przycisk
+        Button connectBtn = new Button("Zaloguj");
+        connectBtn.setStyle("-fx-background-color: #89b4fa; -fx-text-fill: #1e1e2e; -fx-font-weight: bold; -fx-cursor: hand;");
         HBox btnBox = new HBox(connectBtn);
         btnBox.setAlignment(Pos.BOTTOM_RIGHT);
         grid.add(btnBox, 1, 5);
 
-        // Komunikat statusu
         Text statusText = new Text();
         statusText.setFont(Font.font("Consolas", 12));
         grid.add(statusText, 0, 6, 2, 1);
 
-        // Akcja połączenia
         Runnable doConnect = () -> {
-            String host   = hostField.getText().trim();
+            String host = hostField.getText().trim();
             String portStr = portField.getText().trim();
-            String code   = codeField.getText().trim();
-            String config = cfgBox.getValue();
+            String login = loginField.getText().trim();
+            String password = passwordField.getText();
 
             int port;
             try {
@@ -139,80 +118,101 @@ public class LoginScreen {
                 return;
             }
 
-            if (code.isEmpty()) {
+            if (login.isEmpty() || password.isEmpty()) {
                 statusText.setFill(Color.web("#f38ba8"));
-                statusText.setText("Podaj kod dostępu.");
+                statusText.setText("Podaj login i hasło.");
                 return;
             }
 
             connectBtn.setDisable(true);
             statusText.setFill(Color.web("#fab387"));
-            statusText.setText("Łączenie z " + host + ":" + port + " …");
+            statusText.setText("Łączenie...");
 
-            // Operacje sieciowe poza wątkiem FX
-            Thread thread = new Thread(() -> {
+            new Thread(() -> {
                 try {
                     Socket socket = new Socket(host, port);
+                    PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
-                    // Wysłanie handshake
-                    JSONObject req = new JSONObject();
-                    req.put("code",   code);
-                    req.put("config", config);
-                    PrintWriter pw = new PrintWriter(
-                            new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
-                    pw.println(req.toString());
+                    // KROK 1: Autoryzacja
+                    JSONObject authReq = new JSONObject();
+                    authReq.put("username", login);
+                    authReq.put("password", password);
+                    pw.println(authReq.toString());
 
-                    // Odczyt odpowiedzi (pojedyncza linia JSON)
-                    BufferedReader br = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
                     String line = br.readLine();
+                    if (line == null) throw new Exception("Brak odpowiedzi.");
                     JSONObject resp = new JSONObject(line);
 
                     if (!resp.optBoolean("ok", false)) {
-                        String error = resp.optString("error", "Błąd autoryzacji");
                         Platform.runLater(() -> {
                             statusText.setFill(Color.web("#f38ba8"));
-                            statusText.setText("✗ " + error);
+                            statusText.setText("✗ " + resp.optString("error", "Błąd logowania"));
                             connectBtn.setDisable(false);
                         });
                         socket.close();
                         return;
                     }
 
-                    String username = resp.optString("username", code);
+                    // KROK 2: Pobranie listy i zmiana widoku
+                    String displayName = resp.optString("display_name", login);
+                    JSONObject configs = resp.optJSONObject("available_configs");
 
-                    // Autoryzacja OK – otwarcie terminala
-                    SocketTtyConnector connector = new SocketTtyConnector(socket);
-                    Platform.runLater(() -> {
-                        try {
-                            Stage termStage = new Stage();
-                            terminalApp.showTerminal(termStage, username, connector);
-                            primaryStage.close();
-                        } catch (Exception ex) {
-                            statusText.setFill(Color.web("#f38ba8"));
-                            statusText.setText("Błąd otwierania terminala: " + ex.getMessage());
-                            connectBtn.setDisable(false);
-                        }
-                    });
+                    Platform.runLater(() -> showConfigSelection(socket, displayName, configs, pw));
 
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         statusText.setFill(Color.web("#f38ba8"));
-                        statusText.setText("Błąd połączenia: " + ex.getMessage());
+                        statusText.setText("Błąd: " + ex.getMessage());
                         connectBtn.setDisable(false);
                     });
                 }
-            }, "connect-thread");
-            thread.setDaemon(true);
-            thread.start();
+            }).start();
         };
 
         connectBtn.setOnAction(e -> doConnect.run());
-        // Obsługa klawisza Enter w polu kodu
-        codeField.setOnAction(e -> doConnect.run());
+        loginField.setOnAction(e -> doConnect.run());
+        passwordField.setOnAction(e -> doConnect.run());
 
-        Scene scene = new Scene(grid, 420, 340);
+        Scene scene = new Scene(grid, 420, 360);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    /**
+     * Dynamiczna lista konfiguracji z serwera.
+     */
+    private void showConfigSelection(Socket socket, String username, JSONObject configs, PrintWriter pw) {
+        VBox layout = new VBox(10);
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(20));
+        layout.setStyle("-fx-background-color: #1e1e2e;");
+
+        Text info = new Text("Witaj, " + username + "!\nWybierz środowisko:");
+        info.setFill(Color.web("#cdd6f4"));
+        info.setFont(Font.font("Consolas", 14));
+        layout.getChildren().add(info);
+
+        if (configs != null) {
+            for (String key : configs.keySet()) {
+                Button b = new Button(configs.getString(key));
+                b.setMaxWidth(Double.MAX_VALUE);
+                b.setStyle("-fx-background-color: #45475a; -fx-text-fill: #cdd6f4; -fx-cursor: hand;");
+                b.setOnAction(e -> {
+                    try {
+                        JSONObject choice = new JSONObject();
+                        choice.put("config", key);
+                        pw.println(choice.toString());
+
+                        SocketTtyConnector connector = new SocketTtyConnector(socket);
+                        terminalApp.showTerminal(new Stage(), username, connector);
+                        primaryStage.close();
+                    } catch (Exception ex) { ex.printStackTrace(); }
+                });
+                layout.getChildren().add(b);
+            }
+        }
+
+        primaryStage.setScene(new Scene(layout, 350, 400));
     }
 }
