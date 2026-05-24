@@ -16,17 +16,6 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 - **JSON (org.json):** Protokół komunikacyjny z serwerem.
 - **Docker** Strona serwera z zainstalowanym MySQL
 
-## Struktura Projektu
-```text
-Client/src/main/java/com/example/terminalapp/
-├── Launcher.java             # Klasa startowa (obejście problemów z modułami JavaFX)
-├── TerminalApp.java          # Główna klasa aplikacji JavaFX, zarządza oknami
-├── LoginScreen.java          # Logika ekranu logowania i handshake'u
-└── SocketTtyConnector.java   # Implementacja TtyConnector dla strumieni sieciowych
-```
-
-## Uruchomienie
-
 ### Wymagania
 - JDK 17+.
 - Docker.
