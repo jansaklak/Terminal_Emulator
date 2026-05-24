@@ -9,9 +9,9 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <javafx.version>21.0.5</javafx.version>
+    <javafx.version>17.0.10</javafx.version>
   </properties>
 
 
@@ -80,7 +80,7 @@
 	            <configuration>
 	              <rules>
 	                <requireJavaVersion>
-                    <version>[21,)</version>
+                      <version>[17,)</version>
 	                </requireJavaVersion>
 	              </rules>
 	            </configuration>

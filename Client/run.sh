@@ -7,12 +7,14 @@ detect_jdk_home() {
 
   if [[ -n "${JAVA_HOME:-}" && -x "$JAVA_HOME/bin/java" ]]; then
     jdk_home="$JAVA_HOME"
+  elif [[ -n "${JAVA_HOME:-}" && -x "$JAVA_HOME" ]]; then
+    jdk_home="$(cd "$(dirname "$JAVA_HOME")/.." && pwd)"
   elif [[ "$os_name" == "Darwin" ]]; then
-    local brew_jdk="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+    local brew_jdk="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
     if [[ -d "$brew_jdk" ]]; then
       jdk_home="$brew_jdk"
     elif command -v /usr/libexec/java_home >/dev/null 2>&1; then
-      jdk_home="$(/usr/libexec/java_home -v 21 2>/dev/null || true)"
+      jdk_home="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
     fi
   else
     local java_bin=""
@@ -28,7 +30,7 @@ detect_jdk_home() {
   if [[ -n "$jdk_home" ]]; then
     local actual_ver
     actual_ver="$($jdk_home/bin/java -version 2>&1 | head -n 1 || true)"
-    if [[ "$actual_ver" =~ "version \"21" ]]; then
+    if [[ "$actual_ver" =~ "version \"17" ]]; then
       printf '%s\n' "$jdk_home"
       return 0
     fi
@@ -41,7 +43,7 @@ OS_NAME="$(uname -s)"
 JDK_HOME="$(detect_jdk_home "$OS_NAME" || true)"
 
 if [[ "$JDK_HOME" == "" ]]; then
-    echo "ERROR: Nie znaleziono JDK 21. Zainstaluj JDK 21 albo ustaw JAVA_HOME na JDK 21." >&2
+  echo "ERROR: Nie znaleziono JDK 17. Zainstaluj JDK 17 albo ustaw JAVA_HOME na JDK 17." >&2
     exit 1
 fi
 
