@@ -52,4 +52,4 @@ export JAVA_HOME="$JDK_HOME"
 JAVA_VERSION="$("$JAVA_HOME/bin/java" -version 2>&1 | head -n 1 || true)"
 echo "[run.sh] Using JAVA_HOME=$JAVA_HOME ($JAVA_VERSION)"
 
-./mvnw -q -Dmaven.test.skip=true javafx:run
+./mvnw -U -q -Dmaven.test.skip=true javafx:run

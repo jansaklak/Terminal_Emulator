@@ -57,6 +57,10 @@
 
   <repositories>
     <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    <repository>
       <id>jetbrains-utils</id>
       <url>https://packages.jetbrains.team/maven/p/ij/intellij-dependencies</url>
     </repository>
