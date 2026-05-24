@@ -23,7 +23,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Okno logowania z wyborem motywu.
+ * Okno logowania
  */
 public class LoginScreen {
 
@@ -88,7 +88,7 @@ public class LoginScreen {
         passwordField.setStyle("-fx-background-color: #313244; -fx-text-fill: #cdd6f4; -fx-prompt-text-fill: #585b70;");
         grid.add(passwordField, 1, 4);
 
-        // Motyw (RadioButtons zamiast ComboBoxa)
+        // Motyw
         Label themeLabel = new Label("Motyw:");
         themeLabel.setTextFill(Color.web("#a6adc8"));
         grid.add(themeLabel, 0, 5);

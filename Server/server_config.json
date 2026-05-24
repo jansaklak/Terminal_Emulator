@@ -5,10 +5,18 @@
     "CONFIGS": {
         "Bazy1": {
             "cmd": [
-                "docker", "run", "--rm", "-it",
-                "--network", "lab-net",
+                "docker",
+                "run",
+                "--rm",
+                "-it",
+                "--network",
+                "lab-net",
                 "mysql:8.0",
-                "mysql", "-hmysql_lab", "-ulabuser", "-plabpass", "labdb"
+                "mysql",
+                "-hmysql_lab",
+                "-ulabuser",
+                "-plabpass",
+                "labdb"
             ],
             "cpu_limit": "0.5",
             "mem_limit": "256m",
@@ -16,9 +24,14 @@
         },
         "LinuxTerminal": {
             "cmd": [
-                "docker", "run", "--rm", "-it",
-                "--hostname", "{user}-lab",
-                "-v", "./Shared/Ubuntu:/shared_data:ro",
+                "docker",
+                "run",
+                "--rm",
+                "-it",
+                "--hostname",
+                "{user}-lab",
+                "-v",
+                "./Shared/Ubuntu:/shared_data:ro",
                 "ubuntu:22.04",
                 "/bin/bash"
             ],
@@ -28,10 +41,18 @@
         },
         "BazyRoot": {
             "cmd": [
-                "docker", "run", "--rm", "-it",
-                "--network", "lab-net",
+                "docker",
+                "run",
+                "--rm",
+                "-it",
+                "--network",
+                "lab-net",
                 "mysql:8.0",
-                "mysql", "-hmysql_lab", "-uroot", "-prootpass", "labdb"
+                "mysql",
+                "-hmysql_lab",
+                "-uroot",
+                "-prootpass",
+                "labdb"
             ],
             "cpu_limit": "1.0",
             "mem_limit": "512m",
