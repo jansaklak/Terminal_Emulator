@@ -11,7 +11,7 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <javafx.version>17.0.10</javafx.version>
+    <javafx.version>17.0.8</javafx.version>
   </properties>
 
 
