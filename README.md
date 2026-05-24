@@ -9,8 +9,8 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 - **Obsługa sesji:** Możliwość restartowania sesji bez konieczności ponownego uruchamiania aplikacji.
 
 ## Użyte technologie
-- **Java 21+**
-- **JavaFX 21:** Interfejs użytkownika.
+- **Java 17+**
+- **JavaFX 17.0.8:** Interfejs użytkownika.
 - **JediTerm (2.65):** Rdzeń emulatora terminala (JetBrains).
 - **Maven:** Zarządzanie projektem i zależnościami.
 - **JSON (org.json):** Protokół komunikacyjny z serwerem.
@@ -28,24 +28,18 @@ Client/src/main/java/com/example/terminalapp/
 ## Uruchomienie
 
 ### Wymagania
-- JDK 21.
-- Maven (dołączony wrapper `mvnw` w projekcie).
-- Docker
+- JDK 17+.
+- Docker.
+- `run.sh` do uruchamiania klienta.
 
 ### Kompilacja i start
-Aby skompilować projekt i uruchomić aplikację, wykonaj poniższe polecenia w terminalu:
+Aby uruchomić projekt, najpierw startuj serwer, a potem klienta przez `run.sh`:
 
-```powershell
-# Pobranie zależności i kompilacja
-cd ./Client
-./mvnw clean compile
-
-# Uruchomienie serwera Docker
-
-cd ../Server
+```bash
+cd ./Server
 docker compose up --build -d
-
-# Uruchomienie aplikacji
 cd ../Client
 ./run.sh
 ```
+
+Nie uruchamiaj klienta bezpośrednio przez `./mvnw` — używaj `./run.sh`, bo automatycznie dobiera odpowiednie `JAVA_HOME` i wersję Javy.
