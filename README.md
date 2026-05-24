@@ -9,8 +9,8 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 - **Obsługa sesji:** Możliwość restartowania sesji bez konieczności ponownego uruchamiania aplikacji.
 
 ## Użyte technologie
-- **Java 18+**
-- **JavaFX 18:** Interfejs użytkownika.
+- **Java 21+**
+- **JavaFX 21:** Interfejs użytkownika.
 - **JediTerm (2.65):** Rdzeń emulatora terminala (JetBrains).
 - **Maven:** Zarządzanie projektem i zależnościami.
 - **JSON (org.json):** Protokół komunikacyjny z serwerem.
@@ -18,7 +18,7 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 
 ## Struktura Projektu
 ```text
-src/main/java/com/example/terminalapp/
+Client/src/main/java/com/example/terminalapp/
 ├── Launcher.java             # Klasa startowa (obejście problemów z modułami JavaFX)
 ├── TerminalApp.java          # Główna klasa aplikacji JavaFX, zarządza oknami
 ├── LoginScreen.java          # Logika ekranu logowania i handshake'u
@@ -28,7 +28,7 @@ src/main/java/com/example/terminalapp/
 ## Uruchomienie
 
 ### Wymagania
-- JDK 18 lub nowsze.
+- JDK 21.
 - Maven (dołączony wrapper `mvnw` w projekcie).
 - Docker
 
@@ -37,15 +37,15 @@ Aby skompilować projekt i uruchomić aplikację, wykonaj poniższe polecenia w 
 
 ```powershell
 # Pobranie zależności i kompilacja
+cd ./Client
 ./mvnw clean compile
 
 # Uruchomienie serwera Docker
 
-cd ./Server
+cd ../Server
 docker compose up --build -d
 
 # Uruchomienie aplikacji
-cd ..
-./mvnw javafx:run
+cd ../Client
+./run.sh
 ```
-

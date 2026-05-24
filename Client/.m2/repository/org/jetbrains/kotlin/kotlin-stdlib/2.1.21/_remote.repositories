@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Sun May 24 12:23:40 CEST 2026
+kotlin-stdlib-2.1.21.jar>jetbrains-utils=
+kotlin-stdlib-2.1.21.pom>jetbrains-utils=

@@ -38,4 +38,7 @@ build/
 ### Mac OS ###
 .DS_Store
 
-.Server/logs/
+Server/logs/
+Server/__pycache__/
+Server/*.pyc
+Server/online.json

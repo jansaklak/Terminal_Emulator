@@ -1,0 +1,41 @@
+{
+    "HOST": "0.0.0.0",
+    "PORT": 51234,
+    "LOG_DIR": "/var/log/terminal-server",
+    "CONFIGS": {
+        "Bazy1": {
+            "cmd": [
+                "docker", "run", "--rm", "-it",
+                "--network", "lab-net",
+                "mysql:8.0",
+                "mysql", "-hmysql_lab", "-ulabuser", "-plabpass", "labdb"
+            ],
+            "cpu_limit": "0.5",
+            "mem_limit": "256m",
+            "description": "MySQL labdb (użytkownik labuser)"
+        },
+        "LinuxTerminal": {
+            "cmd": [
+                "docker", "run", "--rm", "-it",
+                "--hostname", "{user}-lab",
+                "-v", "./Shared/Ubuntu:/shared_data:ro",
+                "ubuntu:22.04",
+                "/bin/bash"
+            ],
+            "cpu_limit": "0.5",
+            "mem_limit": "256m",
+            "description": "Powłoka bash (Ubuntu)"
+        },
+        "BazyRoot": {
+            "cmd": [
+                "docker", "run", "--rm", "-it",
+                "--network", "lab-net",
+                "mysql:8.0",
+                "mysql", "-hmysql_lab", "-uroot", "-prootpass", "labdb"
+            ],
+            "cpu_limit": "1.0",
+            "mem_limit": "512m",
+            "description": "MySQL labdb (root)"
+        }
+    }
+}

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>Terminal_Emulator</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <javafx.version>21.0.5</javafx.version>
+  </properties>
+
+
+  <dependencies>
+    <!-- JavaFX -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-swing</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+
+    <!-- JediTerm -->
+    <dependency>
+      <groupId>org.jetbrains.jediterm</groupId>
+      <artifactId>jediterm-core</artifactId>
+      <version>3.61</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.jediterm</groupId>
+      <artifactId>jediterm-ui</artifactId>
+      <version>3.61</version>
+    </dependency>
+
+    <!-- JSON -->
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20231013</version>
+    </dependency>
+
+    <!-- Logging implementation for JediTerm -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.9</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>jetbrains-utils</id>
+      <url>https://packages.jetbrains.team/maven/p/ij/intellij-dependencies</url>
+    </repository>
+  </repositories>
+
+
+
+	  <build>
+	    <plugins>
+	      <plugin>
+	        <groupId>org.apache.maven.plugins</groupId>
+	        <artifactId>maven-enforcer-plugin</artifactId>
+	        <version>3.5.0</version>
+	        <executions>
+	          <execution>
+	            <id>enforce-java</id>
+	            <phase>validate</phase>
+	            <goals>
+	              <goal>enforce</goal>
+	            </goals>
+	            <configuration>
+	              <rules>
+	                <requireJavaVersion>
+                    <version>[21,)</version>
+	                </requireJavaVersion>
+	              </rules>
+	            </configuration>
+	          </execution>
+	        </executions>
+	      </plugin>
+	      <plugin>
+	        <groupId>org.apache.maven.plugins</groupId>
+	        <artifactId>maven-compiler-plugin</artifactId>
+	        <version>3.11.0</version>
+	        <configuration>
+	          <release>${maven.compiler.release}</release>
+	        </configuration>
+	      </plugin>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+	        <configuration>
+	          <mainClass>com.example.terminalapp.Launcher</mainClass>
+	          <!-- Capture forked JVM output for troubleshooting (javafx.outputFile user property overrides) -->
+	          <outputFile>${project.build.directory}/javafx-run.log</outputFile>
+	          <!-- In sandboxed environments JavaFX may not be able to write to ~/.openjfx/cache -->
+	          <options>
+	            <option>-Djavafx.verbose=true</option>
+	            <option>-Djavafx.debug=true</option>
+	            <option>-Djavafx.cachedir=${project.build.directory}/javafx-cache</option>
+	          </options>
+	        </configuration>
+	      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,228 @@
+{
+    "imie_naz": {
+        "username": "imie_naz",
+        "password": "801115c7",
+        "display_name": "imie_nazwisko",
+        "groups": [
+            "bazy1",
+            "bazy2",
+            "bazy3"
+        ]
+    },
+    "grzegorz_now": {
+        "username": "grzegorz_now",
+        "password": "d2f3a1a8",
+        "display_name": "Grzegorz_Nowak",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "adam_kow": {
+        "username": "adam_kow",
+        "password": "ea332f1f",
+        "display_name": "Adam_Kowalski",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "anna_iks": {
+        "username": "anna_iks",
+        "password": "77f97b91",
+        "display_name": "Anna_Iksi\u0144ska",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "filip_bla": {
+        "username": "filip_bla",
+        "password": "cddd4a45",
+        "display_name": "Filip_B\u0142asiak",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "grzegorz_kli": {
+        "username": "grzegorz_kli",
+        "password": "8fbeaf78",
+        "display_name": "Grzegorz_Klimczak",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "adam_mic": {
+        "username": "adam_mic",
+        "password": "2372258f",
+        "display_name": "Adam_Mickiewicz",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "juliusz_slo": {
+        "username": "juliusz_slo",
+        "password": "d338381a",
+        "display_name": "Juliusz_S\u0142owacki",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "maria_skl": {
+        "username": "maria_skl",
+        "password": "97133cba",
+        "display_name": "Maria_Sk\u0142odowska",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "leopold_maj": {
+        "username": "leopold_maj",
+        "password": "7d08e84b",
+        "display_name": "Leopold_Majsterek",
+        "groups": [
+            "bazy1"
+        ]
+    },
+    "mieczyslaw_wis": {
+        "username": "mieczyslaw_wis",
+        "password": "9784c91c",
+        "display_name": "Mieczys\u0142aw_Wi\u015bniewski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "damian_dab": {
+        "username": "damian_dab",
+        "password": "580427b0",
+        "display_name": "Damian_D\u0105browski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "dawid_lew": {
+        "username": "dawid_lew",
+        "password": "fcd2471a",
+        "display_name": "Dawid_Lewandowski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "przemyslaw_woj": {
+        "username": "przemyslaw_woj",
+        "password": "73ae22d6",
+        "display_name": "Przemys\u0142aw_W\u00f3jcik",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "sebastian_kam": {
+        "username": "sebastian_kam",
+        "password": "1a28b470",
+        "display_name": "Sebastian_Kami\u0144ski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "czeslaw_kow": {
+        "username": "czeslaw_kow",
+        "password": "77118ec4",
+        "display_name": "Czes\u0142aw_Kowalczyk",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "leszek_zie": {
+        "username": "leszek_zie",
+        "password": "39a53f0f",
+        "display_name": "Leszek_Zieli\u0144ski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "daniel_szy": {
+        "username": "daniel_szy",
+        "password": "391f4d48",
+        "display_name": "Daniel_Szyma\u0144ski",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "waldemar_woz": {
+        "username": "waldemar_woz",
+        "password": "bd7b0c31",
+        "display_name": "Waldemar_Wo\u017aniak",
+        "groups": [
+            "bazy2"
+        ]
+    },
+    "agnieszka_sob": {
+        "username": "agnieszka_sob",
+        "password": "d35510e5",
+        "display_name": "Agnieszka_Sobczak",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "waldemar_bak": {
+        "username": "waldemar_bak",
+        "password": "52534db5",
+        "display_name": "Waldemar_B\u0105k",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "helena_tom": {
+        "username": "helena_tom",
+        "password": "d1001e0f",
+        "display_name": "Helena_Tomaszewska",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "filip_kow": {
+        "username": "filip_kow",
+        "password": "28b6e43c",
+        "display_name": "Filip_Kowalczyk",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "marzena_kwa": {
+        "username": "marzena_kwa",
+        "password": "372503e1",
+        "display_name": "Marzena_KWasilewska",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "adam_glo": {
+        "username": "adam_glo",
+        "password": "4d7f7c19",
+        "display_name": "Adam_G\u0142owacki",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "mazur_slo": {
+        "username": "mazur_slo",
+        "password": "643cc5e6",
+        "display_name": "Mazur_S\u0142owacki",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "maria_maz": {
+        "username": "maria_maz",
+        "password": "9f035aa8",
+        "display_name": "Maria_Mazurek",
+        "groups": [
+            "bazy3"
+        ]
+    },
+    "leopold_szu": {
+        "username": "leopold_szu",
+        "password": "1861681d",
+        "display_name": "Leopold_Szulc",
+        "groups": [
+            "bazy3"
+        ]
+    }
+}

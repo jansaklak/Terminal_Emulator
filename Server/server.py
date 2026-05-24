@@ -14,18 +14,32 @@ import signal
 import sys
 from pathlib import Path
 
-# Ścieżka do pliku konfiguracyjnego JSON
-CONFIG_FILE = Path("config.json")
+# Ścieżki do plików konfiguracyjnych JSON
+CONFIG_FILE = Path("server_config.json")
+USERS_FILE = Path("users.json")
 ONLINE_FILE = Path("online.json")
 
 def get_live_config():
-    """Wczytuje aktualną konfigurację z pliku JSON."""
+    """Wczytuje aktualną konfigurację serwera z pliku JSON."""
     try:
+        if not CONFIG_FILE.exists():
+             return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"BŁĄD krytyczny wczytywania config.json: {e}")
-        return {"HOST": "0.0.0.0", "PORT": 5000, "USERS": {}, "CONFIGS": {}}
+        print(f"BŁĄD krytyczny wczytywania {CONFIG_FILE}: {e}")
+        return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
+
+def get_users():
+    """Wczytuje listę użytkowników."""
+    try:
+        if not USERS_FILE.exists():
+            return {}
+        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"BŁĄD wczytywania {USERS_FILE}: {e}")
+        return {}
 
 def update_online(username, config_name, action="add"):
     try:
@@ -48,7 +62,7 @@ def update_online(username, config_name, action="add"):
 # Wstępne wczytanie parametrów startowych
 initial_cfg = get_live_config()
 HOST = initial_cfg.get("HOST", "0.0.0.0")
-PORT = initial_cfg.get("PORT", 5000)
+PORT = initial_cfg.get("PORT", 51234)
 LOG_DIR = Path(initial_cfg.get("LOG_DIR", "/var/log/terminal-server"))
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -166,7 +180,7 @@ def handle_client(conn: socket.socket, addr):
     try:
         # Pobieramy świeże dane przy każdym nowym połączeniu
         cfg_data = get_live_config()
-        users = cfg_data.get('USERS', {})
+        users = get_users()
         configs = cfg_data.get('CONFIGS', {})
 
         # KROK 1: Autoryzacja użytkownika
@@ -204,8 +218,26 @@ def handle_client(conn: socket.socket, addr):
 
         # Uruchomienie właściwej sesji
         raw_cmd = configs[selected_key]["cmd"]
-        # Dynamiczne podstawianie nazwy użytkownika do komendy
-        cmd = [part.replace("{user}", username) for part in raw_cmd]
+        cpu_limit = configs[selected_key].get("cpu_limit", "0.5")
+        mem_limit = configs[selected_key].get("mem_limit", "256m")
+        
+        # Dynamiczne podstawianie nazwy użytkownika i rozwiązywanie ścieżek relatywnych
+        host_project_path = os.environ.get("PROJECT_PATH", os.path.abspath(os.path.dirname(__file__)))
+        
+        # Budujemy nową komendę z wstrzykniętymi limitami
+        cmd = []
+        # docker run to pierwsze dwa elementy
+        cmd.extend(raw_cmd[:2]) 
+        # Dodajemy limity
+        cmd.extend(["--cpus", cpu_limit, "--memory", mem_limit])
+        
+        # Przetwarzamy resztę komendy
+        for part in raw_cmd[2:]:
+            processed = part.replace("{user}", username)
+            if processed.startswith("./") or processed.startswith("../"):
+                processed = os.path.abspath(os.path.join(host_project_path, processed))
+            cmd.append(processed)
+            
         run_session(conn, addr, username, selected_key, cmd)
 
     except Exception as e:
