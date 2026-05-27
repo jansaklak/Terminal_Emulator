@@ -2,6 +2,7 @@
 import socket
 import threading
 import os
+import subprocess
 import pty
 import select
 import fcntl
@@ -12,6 +13,9 @@ import logging
 import datetime
 import signal
 import sys
+import re
+import ntpath
+import posixpath
 from pathlib import Path
 
 # Ścieżki do plików konfiguracyjnych JSON
@@ -113,7 +117,209 @@ class SessionLogger:
 def set_winsize(fd, rows: int, cols: int):
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
 
-def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_list: list):
+
+def resolve_host_path(base_path: str, relative_path: str) -> str:
+    if ":" in base_path or "\\" in base_path:
+        return ntpath.normpath(ntpath.join(base_path, relative_path))
+    return posixpath.normpath(posixpath.join(base_path, relative_path))
+
+
+def sanitize_docker_name(value: str) -> str:
+    sanitized = re.sub(r"[^a-z0-9_.-]+", "-", value.lower()).strip("-._")
+    return sanitized or "user"
+
+
+def run_docker_command(args: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(["docker", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+
+def get_session_definition(config: dict) -> dict:
+    return config.get("session", config)
+
+
+def seed_directory_into_volume(volume_name: str, seed_source: str, image: str) -> None:
+    seed_result = run_docker_command([
+        "run",
+        "--rm",
+        "-v",
+        f"{volume_name}:/target",
+        "-v",
+        f"{seed_source}:/seed:ro",
+        image,
+        "bash",
+        "-lc",
+        "mkdir -p /target && cp -a /seed/. /target/",
+    ])
+    if seed_result.returncode != 0:
+        raise RuntimeError(seed_result.stderr.strip() or f"Nie udało się zainicjalizować wolumenu {volume_name}")
+
+
+def remove_docker_container(container_name: str) -> None:
+    inspect_result = run_docker_command(["inspect", container_name])
+    if inspect_result.returncode != 0:
+        return
+
+    remove_result = run_docker_command(["rm", "-f", container_name])
+    if remove_result.returncode != 0:
+        raise RuntimeError(remove_result.stderr.strip() or f"Nie udało się usunąć kontenera {container_name}")
+
+
+def remove_docker_volume(volume_name: str) -> None:
+    inspect_result = run_docker_command(["volume", "inspect", volume_name])
+    if inspect_result.returncode != 0:
+        return
+
+    remove_result = run_docker_command(["volume", "rm", volume_name])
+    if remove_result.returncode != 0:
+        raise RuntimeError(remove_result.stderr.strip() or f"Nie udało się usunąć wolumenu {volume_name}")
+
+
+def ensure_session_container(username: str, host_project_path: str, config: dict, cpu_limit: str, mem_limit: str) -> str:
+    session = get_session_definition(config)
+    mode = session.get("mode", "container")
+    base_container_name = session.get("base_name", "session")
+    container_name = f"{base_container_name}_{sanitize_docker_name(username)}"
+
+    existing = run_docker_command(["inspect", "-f", "{{.State.Running}}", container_name])
+    if existing.returncode == 0:
+        if existing.stdout.strip() != "true":
+            start_result = run_docker_command(["start", container_name])
+            if start_result.returncode != 0:
+                raise RuntimeError(start_result.stderr.strip() or f"Nie udało się uruchomić kontenera {container_name}")
+        return container_name
+
+    if mode == "mysql":
+        image = session.get("image", "mysql:8.0")
+        network_name = session.get("network", "lab-net")
+        root_password = session.get("root_password", "rootpass")
+        database_name = session.get("database", "labdb")
+        database_user = session.get("user", "labuser")
+        database_password = session.get("password", "labpass")
+        init_sql = resolve_host_path(host_project_path, session.get("seed_sql", "./Shared/Bazy/init.sql"))
+        data_volume = f"{container_name}_data"
+
+        run_args = [
+            "run",
+            "-d",
+            "--name",
+            container_name,
+            "--network",
+            network_name,
+            "-e",
+            f"MYSQL_ROOT_PASSWORD={root_password}",
+            "-e",
+            f"MYSQL_DATABASE={database_name}",
+            "-e",
+            f"MYSQL_USER={database_user}",
+            "-e",
+            f"MYSQL_PASSWORD={database_password}",
+            "-v",
+            f"{data_volume}:/var/lib/mysql",
+            "-v",
+            f"{init_sql}:{session.get('seed_target', '/docker-entrypoint-initdb.d/init.sql')}:ro",
+            image,
+        ]
+
+        service_command = session.get("service_command")
+        if service_command:
+            run_args.extend(service_command)
+
+        create_result = run_docker_command(run_args)
+        if create_result.returncode != 0:
+            raise RuntimeError(create_result.stderr.strip() or f"Nie udało się utworzyć kontenera {container_name}")
+
+        return container_name
+
+    image = session.get("image", "ubuntu:22.04")
+    seed_dir = resolve_host_path(host_project_path, session.get("seed_dir", "./Shared/Ubuntu"))
+    mount_path = session.get("mount_path", "/shared_data")
+    data_volume = f"{container_name}_data"
+    hostname_template = session.get("hostname_template", "{user}-lab")
+    hostname = hostname_template.replace("{user}", sanitize_docker_name(username))
+
+    seed_directory_into_volume(data_volume, seed_dir, image)
+
+    create_result = run_docker_command([
+        "run",
+        "-d",
+        "--name",
+        container_name,
+        "--hostname",
+        hostname,
+        "--cpus",
+        cpu_limit,
+        "--memory",
+        mem_limit,
+        "-v",
+        f"{data_volume}:{mount_path}",
+        image,
+        *session.get("service_command", ["sleep", "infinity"]),
+    ])
+    if create_result.returncode != 0:
+        raise RuntimeError(create_result.stderr.strip() or f"Nie udało się utworzyć kontenera {container_name}")
+
+    return container_name
+
+
+def recreate_session_state(username: str, host_project_path: str, config: dict, cpu_limit: str, mem_limit: str) -> None:
+    session = get_session_definition(config)
+    base_container_name = session.get("base_name", "session")
+    container_name = f"{base_container_name}_{sanitize_docker_name(username)}"
+    data_volume = f"{container_name}_data"
+    remove_docker_container(container_name)
+    remove_docker_volume(data_volume)
+    ensure_session_container(username, host_project_path, config, cpu_limit, mem_limit)
+
+
+def is_reset_control_message(data: bytes) -> bool:
+    try:
+        payload = json.loads(data.decode("utf-8", errors="strict").strip())
+    except Exception:
+        return False
+
+    return payload.get("__control__") == "reset_session"
+
+
+def build_attach_command(username: str, container_name: str, config: dict) -> list[str]:
+    session = get_session_definition(config)
+    attach_template = session.get("attach_command", [])
+    command = [
+        part.replace("{user}", username).replace("{service_container}", container_name)
+        for part in attach_template
+    ]
+
+    if session.get("mode", "container") == "mysql":
+        return ["docker", "exec", "-it", container_name, *command]
+
+    return [
+        "docker",
+        "exec",
+        "-it",
+        "-w",
+        session.get("workdir", "/shared_data"),
+        container_name,
+        *command,
+    ]
+
+
+def shutdown_session(pid: int, master_fd: int, conn: socket.socket, stop_event: threading.Event, session_log: SessionLogger, username: str, config_name: str) -> None:
+    stop_event.set()
+    session_log.close()
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        os.close(master_fd)
+    except OSError:
+        pass
+    try:
+        conn.close()
+    except Exception:
+        pass
+    update_online(username, config_name, "remove")
+
+def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_list: list, reset_handler=None):
     """Uruchamia kontener Dockera za pomocą PTY."""
     log.info("Uruchamianie sesji: użytkownik=%s konf=%s adres=%s polecenie=%s",
              username, config_name, addr, cmd_list)
@@ -159,20 +365,19 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                 conn.settimeout(1.0)
                 data = conn.recv(1024)
                 if not data: break
+                if reset_handler and is_reset_control_message(data):
+                    try:
+                        reset_handler()
+                    finally:
+                        shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
+                    break
                 session_log.feed(data)
                 os.write(master_fd, data)
             except socket.timeout: continue
             except Exception: break
     finally:
-        stop_event.set()
-        session_log.close()
-        try: os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError: pass
-        try: os.close(master_fd)
-        except OSError: pass
-        try: conn.close()
-        except Exception: pass
-        update_online(username, config_name, "remove")
+        if not stop_event.is_set():
+            shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
         log.info("Koniec sesji: użytkownik=%s konf=%s", username, config_name)
 
 def handle_client(conn: socket.socket, addr):
@@ -217,28 +422,23 @@ def handle_client(conn: socket.socket, addr):
             return conn.close()
 
         # Uruchomienie właściwej sesji
-        raw_cmd = configs[selected_key]["cmd"]
+        session_config = get_session_definition(configs[selected_key])
         cpu_limit = configs[selected_key].get("cpu_limit", "0.5")
         mem_limit = configs[selected_key].get("mem_limit", "256m")
-        
+
         # Dynamiczne podstawianie nazwy użytkownika i rozwiązywanie ścieżek relatywnych
-        host_project_path = os.environ.get("PROJECT_PATH", os.path.abspath(os.path.dirname(__file__)))
-        
-        # Budujemy nową komendę z wstrzykniętymi limitami
-        cmd = []
-        # docker run to pierwsze dwa elementy
-        cmd.extend(raw_cmd[:2]) 
-        # Dodajemy limity
-        cmd.extend(["--cpus", cpu_limit, "--memory", mem_limit])
-        
-        # Przetwarzamy resztę komendy
-        for part in raw_cmd[2:]:
-            processed = part.replace("{user}", username)
-            if processed.startswith("./") or processed.startswith("../"):
-                processed = os.path.abspath(os.path.join(host_project_path, processed))
-            cmd.append(processed)
-            
-        run_session(conn, addr, username, selected_key, cmd)
+        host_project_path = os.environ.get("PROJECT_PATH") or os.path.abspath(os.path.dirname(__file__))
+        session_container_name = ensure_session_container(username, host_project_path, configs[selected_key], cpu_limit, mem_limit)
+        cmd = build_attach_command(username, session_container_name, configs[selected_key])
+
+        run_session(
+            conn,
+            addr,
+            username,
+            selected_key,
+            cmd,
+            reset_handler=lambda: recreate_session_state(username, host_project_path, configs[selected_key], cpu_limit, mem_limit),
+        )
 
     except Exception as e:
         log.error("Błąd handshake z %s: %s", addr, e)

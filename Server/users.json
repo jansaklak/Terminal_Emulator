@@ -28,7 +28,7 @@
     "anna_iks": {
         "username": "anna_iks",
         "password": "77f97b91",
-        "display_name": "Anna_Iksi\u0144ska",
+        "display_name": "Anna_Iksińska",
         "groups": [
             "bazy1"
         ]
@@ -36,7 +36,7 @@
     "filip_bla": {
         "username": "filip_bla",
         "password": "cddd4a45",
-        "display_name": "Filip_B\u0142asiak",
+        "display_name": "Filip_Błasiak",
         "groups": [
             "bazy1"
         ]
@@ -60,7 +60,7 @@
     "juliusz_slo": {
         "username": "juliusz_slo",
         "password": "d338381a",
-        "display_name": "Juliusz_S\u0142owacki",
+        "display_name": "Juliusz_Słowacki",
         "groups": [
             "bazy1"
         ]
@@ -68,7 +68,7 @@
     "maria_skl": {
         "username": "maria_skl",
         "password": "97133cba",
-        "display_name": "Maria_Sk\u0142odowska",
+        "display_name": "Maria_Skłodowska",
         "groups": [
             "bazy1"
         ]
@@ -84,7 +84,7 @@
     "mieczyslaw_wis": {
         "username": "mieczyslaw_wis",
         "password": "9784c91c",
-        "display_name": "Mieczys\u0142aw_Wi\u015bniewski",
+        "display_name": "Mieczysław_Wiśniewski",
         "groups": [
             "bazy2"
         ]
@@ -92,7 +92,7 @@
     "damian_dab": {
         "username": "damian_dab",
         "password": "580427b0",
-        "display_name": "Damian_D\u0105browski",
+        "display_name": "Damian_Dąbrowski",
         "groups": [
             "bazy2"
         ]
@@ -108,7 +108,7 @@
     "przemyslaw_woj": {
         "username": "przemyslaw_woj",
         "password": "73ae22d6",
-        "display_name": "Przemys\u0142aw_W\u00f3jcik",
+        "display_name": "Przemysław_Wójcik",
         "groups": [
             "bazy2"
         ]
@@ -116,7 +116,7 @@
     "sebastian_kam": {
         "username": "sebastian_kam",
         "password": "1a28b470",
-        "display_name": "Sebastian_Kami\u0144ski",
+        "display_name": "Sebastian_Kamiński",
         "groups": [
             "bazy2"
         ]
@@ -124,7 +124,7 @@
     "czeslaw_kow": {
         "username": "czeslaw_kow",
         "password": "77118ec4",
-        "display_name": "Czes\u0142aw_Kowalczyk",
+        "display_name": "Czesław_Kowalczyk",
         "groups": [
             "bazy2"
         ]
@@ -132,7 +132,7 @@
     "leszek_zie": {
         "username": "leszek_zie",
         "password": "39a53f0f",
-        "display_name": "Leszek_Zieli\u0144ski",
+        "display_name": "Leszek_Zieliński",
         "groups": [
             "bazy2"
         ]
@@ -140,7 +140,7 @@
     "daniel_szy": {
         "username": "daniel_szy",
         "password": "391f4d48",
-        "display_name": "Daniel_Szyma\u0144ski",
+        "display_name": "Daniel_Szymański",
         "groups": [
             "bazy2"
         ]
@@ -148,7 +148,7 @@
     "waldemar_woz": {
         "username": "waldemar_woz",
         "password": "bd7b0c31",
-        "display_name": "Waldemar_Wo\u017aniak",
+        "display_name": "Waldemar_Woźniak",
         "groups": [
             "bazy2"
         ]
@@ -164,7 +164,7 @@
     "waldemar_bak": {
         "username": "waldemar_bak",
         "password": "52534db5",
-        "display_name": "Waldemar_B\u0105k",
+        "display_name": "Waldemar_Bąk",
         "groups": [
             "bazy3"
         ]
@@ -196,7 +196,7 @@
     "adam_glo": {
         "username": "adam_glo",
         "password": "4d7f7c19",
-        "display_name": "Adam_G\u0142owacki",
+        "display_name": "Adam_Głowacki",
         "groups": [
             "bazy3"
         ]
@@ -204,7 +204,7 @@
     "mazur_slo": {
         "username": "mazur_slo",
         "password": "643cc5e6",
-        "display_name": "Mazur_S\u0142owacki",
+        "display_name": "Mazur_Słowacki",
         "groups": [
             "bazy3"
         ]
@@ -224,5 +224,11 @@
         "groups": [
             "bazy3"
         ]
+    },
+    "asd": {
+        "username": "asd",
+        "password": "asd",
+        "display_name": "asd",
+        "groups": []
     }
 }

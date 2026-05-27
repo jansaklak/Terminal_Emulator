@@ -9,7 +9,7 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 - **Obsługa sesji:** Możliwość restartowania sesji bez konieczności ponownego uruchamiania aplikacji.
 
 ## Użyte technologie
-- **Java 17+**
+- **Java 17+** (17 lub nowsza)
 - **JavaFX 17.0.8:** Interfejs użytkownika.
 - **JediTerm (2.65):** Rdzeń emulatora terminala (JetBrains).
 - **Maven:** Zarządzanie projektem i zależnościami.
@@ -19,16 +19,27 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 ### Wymagania
 - JDK 17+.
 - Docker.
-- `run.sh` do uruchamiania klienta.
+- `Client/run.py` do uruchamiania klienta.
 
 ### Kompilacja i start
-Aby uruchomić projekt, najpierw startuj serwer, a potem klienta przez `run.sh`:
+Aby uruchomić projekt, najpierw startuj serwer, a potem klienta przez `run.py`:
 
 ```bash
 cd ./Server
 docker compose up --build -d
 cd ../Client
-./run.sh
+python run.py
 ```
 
-Nie uruchamiaj klienta bezpośrednio przez `./mvnw` — używaj `./run.sh`, bo automatycznie dobiera odpowiednie `JAVA_HOME` i wersję Javy.
+Aby otworzyć kilka okien klienta naraz:
+
+```bash
+python run.py --clients 10
+```
+
+Konfiguracja `LinuxTerminal` uruchamia teraz osobny kontener Ubuntu dla każdego użytkownika z własnym stanem i wspólnym stanem startowym z `Shared/Ubuntu`.
+
+Sesje z konfiguracjami bazodanowymi działają teraz na osobnych kontenerach MySQL per użytkownik, więc każdy ma własny stan po starcie, ale wspólny punkt wyjścia.
+
+Izolacja jest domyślna dla wszystkich sesji: nie ma już współdzielonego stanu między użytkownikami poza materiałem startowym.
+

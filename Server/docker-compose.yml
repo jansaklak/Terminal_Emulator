@@ -27,7 +27,7 @@ services:
     container_name: python_gateway
     restart: always
     environment:
-      - PROJECT_PATH=${PWD}
+      - PROJECT_PATH=${PROJECT_PATH}
     ports:
       - "51234:51234"
     volumes:

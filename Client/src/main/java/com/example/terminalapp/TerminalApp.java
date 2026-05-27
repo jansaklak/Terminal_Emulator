@@ -81,7 +81,7 @@ public class TerminalApp extends Application {
 
         root.setStyle("-fx-background-color: " + bgColor + ";");
 
-        Button restartBtn = new Button("⟳ Restart");
+        Button restartBtn = new Button("⟳ Reset");
         restartBtn.setStyle(btnStyle);
         Button zoomInBtn = new Button("+");
         zoomInBtn.setStyle(btnStyle);
@@ -134,6 +134,11 @@ public class TerminalApp extends Application {
         });
 
         restartBtn.setOnAction(e -> {
+            try {
+                connector.requestReset();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
             connector.close();
             stage.close();
             Platform.runLater(() -> {

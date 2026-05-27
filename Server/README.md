@@ -7,8 +7,8 @@
 - `online.json` - aktualny stan aktywnych sesji.
 - `docker-compose.yml` - definicja usług uruchamianych lokalnie przez Dockera.
 - `Dockerfile` - obraz dla komponentów Pythona w katalogu `Server`.
-- `run.sh` - skrypt startowy uruchamiający serwer.
-- `stop.sh` - skrypt zatrzymujący uruchomione procesy lub kontenery.
+- `run.py` - skrypt startowy uruchamiający serwer.
+- `stop.py` - skrypt zatrzymujący uruchomione procesy lub kontenery.
 
 ## Katalogi
 

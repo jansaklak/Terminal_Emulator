@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
  */
 public class SocketTtyConnector implements TtyConnector {
 
+    private static final String RESET_CONTROL = "{\"__control__\":\"reset_session\"}\n";
+
     private final Socket socket;
     private final InputStreamReader reader;
     private final OutputStream out;
@@ -45,6 +47,11 @@ public class SocketTtyConnector implements TtyConnector {
     @Override
     public void write(byte[] bytes) throws IOException {
         out.write(bytes);
+        out.flush();
+    }
+
+    public void requestReset() throws IOException {
+        out.write(RESET_CONTROL.getBytes(StandardCharsets.UTF_8));
         out.flush();
     }
 
