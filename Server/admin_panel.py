@@ -8,6 +8,14 @@ import unicodedata
 app = Flask(__name__)
 CONFIG_FILE = 'server_config.json'
 IMAGES_DIR = 'images'
+USERS_FILE = 'users.json'
+
+def remove_diacritics(text):
+    chars = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
+             'Ą':'A','Ć':'C','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z'}
+    for k, v in chars.items(): text = text.replace(k, v)
+    nfkd_form = unicodedata.normalize('NFKD', text)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def load_config():
     cfg = {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
