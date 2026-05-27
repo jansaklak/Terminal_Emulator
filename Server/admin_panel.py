@@ -7,24 +7,42 @@ import unicodedata
 
 app = Flask(__name__)
 CONFIG_FILE = 'server_config.json'
-USERS_FILE = 'users.json'
-
-def remove_diacritics(text):
-    chars = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z',
-             'Ą':'A','Ć':'C','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z'}
-    for k, v in chars.items(): text = text.replace(k, v)
-    nfkd_form = unicodedata.normalize('NFKD', text)
-    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+IMAGES_DIR = 'images'
 
 def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
-    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    cfg = {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            cfg.update(json.load(f))
+    
+    if os.path.exists(IMAGES_DIR):
+        for entry in os.scandir(IMAGES_DIR):
+            if entry.is_dir():
+                img_cfg_path = os.path.join(entry.path, 'config.json')
+                if os.path.exists(img_cfg_path):
+                    with open(img_cfg_path, 'r', encoding='utf-8') as f:
+                        try:
+                            img_cfg = json.load(f)
+                            # Kluczem jest nazwa folderu
+                            cfg["CONFIGS"][entry.name] = img_cfg
+                        except Exception:
+                            pass
+    return cfg
 
 def save_config(config):
+    # Zapisujemy tylko globalne ustawienia do server_config.json
+    global_cfg = {k: v for k, v in config.items() if k != 'CONFIGS'}
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+        json.dump(global_cfg, f, indent=4, ensure_ascii=False)
+    
+    # Zapisujemy każdą konfigurację obrazu do odpowiedniego folderu
+    if config.get('CONFIGS'):
+        for img_name, img_cfg in config['CONFIGS'].items():
+            img_dir = os.path.join(IMAGES_DIR, img_name)
+            if os.path.exists(img_dir):
+                img_cfg_path = os.path.join(img_dir, 'config.json')
+                with open(img_cfg_path, 'w', encoding='utf-8') as f:
+                    json.dump(img_cfg, f, indent=4, ensure_ascii=False)
 
 def load_users():
     if not os.path.exists(USERS_FILE): return {}

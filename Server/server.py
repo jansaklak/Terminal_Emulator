@@ -20,18 +20,36 @@ from pathlib import Path
 
 # Ścieżki do plików konfiguracyjnych JSON
 CONFIG_FILE = Path("server_config.json")
+IMAGES_DIR = Path("images")
 USERS_FILE = Path("users.json")
 ONLINE_FILE = Path("online.json")
 
 def get_live_config():
-    """Wczytuje aktualną konfigurację serwera z pliku JSON."""
+    """Wczytuje aktualną konfigurację serwera i wszystkich obrazów z folderu images/."""
     try:
-        if not CONFIG_FILE.exists():
-             return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        base_cfg = {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                base_cfg.update(json.load(f))
+        
+        # Skanowanie folderu images w poszukiwaniu konfiguracji
+        if IMAGES_DIR.exists():
+            for img_folder in IMAGES_DIR.iterdir():
+                if img_folder.is_dir():
+                    img_cfg_path = img_folder / "config.json"
+                    if img_cfg_path.exists():
+                        with open(img_cfg_path, 'r', encoding='utf-8') as f:
+                            img_cfg = json.load(f)
+                            # Zapisujemy ścieżkę do folderu obrazu, aby móc rozwiązywać ścieżki zasobów
+                            img_cfg["_img_path"] = str(img_folder)
+                            key = img_folder.name
+                            base_cfg["CONFIGS"][key] = img_cfg
+        
+        return base_cfg
     except Exception as e:
-        print(f"BŁĄD krytyczny wczytywania {CONFIG_FILE}: {e}")
+        msg = f"BŁĄD wczytywania konfiguracji: {e}"
+        if 'log' in globals(): log.error(msg)
+        else: print(msg)
         return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
 
 def get_users():
@@ -179,6 +197,11 @@ def ensure_session_container(username: str, host_project_path: str, config: dict
     mode = session.get("mode", "container")
     base_container_name = session.get("base_name", "session")
     container_name = f"{base_container_name}_{sanitize_docker_name(username)}"
+    img_base = config.get("_img_path", "")
+
+    # Upewnienie się, że sieć istnieje
+    network_name = session.get("network", "lab-net")
+    run_docker_command(["network", "create", network_name]) # Ignorujemy błąd jeśli już istnieje
 
     existing = run_docker_command(["inspect", "-f", "{{.State.Running}}", container_name])
     if existing.returncode == 0:
@@ -195,7 +218,12 @@ def ensure_session_container(username: str, host_project_path: str, config: dict
         database_name = session.get("database", "labdb")
         database_user = session.get("user", "labuser")
         database_password = session.get("password", "labpass")
-        init_sql = resolve_host_path(host_project_path, session.get("seed_sql", "./Shared/Bazy/init.sql"))
+        
+        # Rozwiązywanie ścieżki SQL względem folderu obrazu
+        raw_sql_path = session.get("seed_sql", "resources/init.sql")
+        img_sql_path = resolve_host_path(img_base, raw_sql_path)
+        init_sql = resolve_host_path(host_project_path, img_sql_path)
+        
         data_volume = f"{container_name}_data"
 
         run_args = [
@@ -231,7 +259,12 @@ def ensure_session_container(username: str, host_project_path: str, config: dict
         return container_name
 
     image = session.get("image", "ubuntu:22.04")
-    seed_dir = resolve_host_path(host_project_path, session.get("seed_dir", "./Shared/Ubuntu"))
+    
+    # Rozwiązywanie ścieżki seed względem folderu obrazu
+    raw_seed_path = session.get("seed_dir", "shared")
+    img_seed_path = resolve_host_path(img_base, raw_seed_path)
+    seed_dir = resolve_host_path(host_project_path, img_seed_path)
+    
     mount_path = session.get("mount_path", "/shared_data")
     data_volume = f"{container_name}_data"
     hostname_template = session.get("hostname_template", "{user}-lab")
@@ -327,7 +360,8 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
 
     session_log = SessionLogger(username, config_name)
     master_fd, slave_fd = pty.openpty()
-    set_winsize(master_fd, 40, 120)
+    # Domyślny rozmiar na start (zostanie nadpisany przez klienta)
+    set_winsize(master_fd, 24, 80)
 
     pid = os.fork()
     if pid == 0:
@@ -365,12 +399,14 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                 conn.settimeout(1.0)
                 data = conn.recv(1024)
                 if not data: break
-                if reset_handler and is_reset_control_message(data):
-                    try:
-                        reset_handler()
-                    finally:
+                
+                # Obsługa komunikatów kontrolnych (resize/reset)
+                if b"__control__" in data:
+                    if handle_control_message(data, master_fd, reset_handler):
                         shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
-                    break
+                        break
+                    continue
+
                 session_log.feed(data)
                 os.write(master_fd, data)
             except socket.timeout: continue
@@ -451,6 +487,18 @@ def main():
     server_sock.bind((HOST, PORT))
     server_sock.listen(50)
     log.info("Brama Terminalowa nasłuchuje na %s:%d", HOST, PORT)
+
+    try:
+        while True:
+            conn, addr = server_sock.accept()
+            threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+    except KeyboardInterrupt:
+        log.info("Zamykanie serwera.")
+    finally:
+        server_sock.close()
+
+if __name__ == "__main__":
+    main().info("Brama Terminalowa nasłuchuje na %s:%d", HOST, PORT)
 
     try:
         while True:

@@ -1,0 +1,22 @@
+{
+    "session": {
+        "mode": "mysql",
+        "base_name": "mysql_czesci_pc",
+        "image": "mysql:8.0",
+        "network": "lab-net",
+        "database": "labdb",
+        "user": "labuser",
+        "password": "labpass",
+        "root_password": "rootpass",
+        "seed_sql": "resources/init.sql",
+        "seed_target": "/docker-entrypoint-initdb.d/init.sql",
+        "attach_command": [
+            "sh",
+            "-c",
+            "echo 'Czekam na uruchomienie MySQL (Części PC)...'; until mysqladmin ping -h127.0.0.1 -ulabuser -plabpass --silent; do sleep 1; done; mysql -h127.0.0.1 -ulabuser -plabpass labdb"
+        ]
+    },
+    "cpu_limit": "0.5",
+    "mem_limit": "256m",
+    "description": "MySQL - Części PC"
+}

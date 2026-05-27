@@ -1,0 +1,22 @@
+{
+    "session": {
+        "mode": "mysql",
+        "base_name": "mysql_lab_root",
+        "image": "mysql:8.0",
+        "network": "lab-net",
+        "database": "labdb",
+        "user": "labuser",
+        "password": "labpass",
+        "root_password": "rootpass",
+        "seed_sql": "resources/init.sql",
+        "seed_target": "/docker-entrypoint-initdb.d/init.sql",
+        "attach_command": [
+            "sh",
+            "-c",
+            "echo 'Czekam na uruchomienie MySQL (root)...'; until mysqladmin ping -h127.0.0.1 -uroot -prootpass --silent; do sleep 1; done; mysql -h127.0.0.1 -uroot -prootpass labdb"
+        ]
+    },
+    "cpu_limit": "1.0",
+    "mem_limit": "512m",
+    "description": "MySQL labdb (root)"
+}

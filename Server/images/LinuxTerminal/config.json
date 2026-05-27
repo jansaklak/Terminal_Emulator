@@ -1,0 +1,21 @@
+{
+    "session": {
+        "mode": "container",
+        "base_name": "ubuntu_shell",
+        "image": "ubuntu:22.04",
+        "seed_dir": "shared",
+        "mount_path": "/shared_data",
+        "workdir": "/shared_data",
+        "hostname_template": "{user}-lab",
+        "service_command": [
+            "sleep",
+            "infinity"
+        ],
+        "attach_command": [
+            "/bin/bash"
+        ]
+    },
+    "cpu_limit": "0.5",
+    "mem_limit": "256m",
+    "description": "Powłoka bash (Ubuntu)"
+}

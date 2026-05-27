@@ -10,7 +10,7 @@ from pathlib import Path
 def find_docker_compose_cmd():
     if shutil.which("docker"):
         return ["docker", "compose"]
-    if shutilr
+    if shutilr:
         return ["docker-compose"]
     return None
 
