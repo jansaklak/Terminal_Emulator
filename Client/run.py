@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import time
+import tempfile
 from pathlib import Path
 from shutil import which
 from typing import Optional
@@ -106,9 +107,21 @@ def build_maven_command(script_dir: Path) -> list[str]:
             "javafx:run",
         ]
 
+    wrapper_path = script_dir / "mvnw"
+    try:
+        wrapper_bytes = wrapper_path.read_bytes()
+    except OSError:
+        wrapper_bytes = b""
+
+    if b"\r" in wrapper_bytes:
+        normalized_wrapper = Path(tempfile.gettempdir()) / "terminal_emulator_mvnw_unix.sh"
+        normalized_wrapper.write_bytes(wrapper_bytes.replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+        normalized_wrapper.chmod(wrapper_path.stat().st_mode)
+        wrapper_path = normalized_wrapper
+
     return [
         "bash",
-        str(script_dir / "mvnw"),
+        str(wrapper_path),
         "-U",
         "-q",
         "-Dmaven.test.skip=true",

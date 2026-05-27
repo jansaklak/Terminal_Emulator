@@ -37,9 +37,3 @@ Aby otworzyć kilka okien klienta naraz:
 python run.py --clients 10
 ```
 
-Konfiguracja `LinuxTerminal` uruchamia teraz osobny kontener Ubuntu dla każdego użytkownika z własnym stanem i wspólnym stanem startowym z `Shared/Ubuntu`.
-
-Sesje z konfiguracjami bazodanowymi działają teraz na osobnych kontenerach MySQL per użytkownik, więc każdy ma własny stan po starcie, ale wspólny punkt wyjścia.
-
-Izolacja jest domyślna dla wszystkich sesji: nie ma już współdzielonego stanu między użytkownikami poza materiałem startowym.
-
