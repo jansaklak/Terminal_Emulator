@@ -12,15 +12,21 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Okno logowania
@@ -172,8 +178,20 @@ public class LoginScreen {
                     // KROK 2: Pobranie listy i zmiana widoku
                     String displayName = resp.optString("display_name", login);
                     JSONObject configs = resp.optJSONObject("available_configs");
+                    Map<String, Boolean> recordingPermissions = new HashMap<>();
+                    Map<String, Boolean> autoExecutePermissions = new HashMap<>();
 
-                    Platform.runLater(() -> showConfigSelection(socket, displayName, configs, pw, isDark));
+                    if (configs != null) {
+                        for (String key : configs.keySet()) {
+                            Object raw = configs.get(key);
+                            if (raw instanceof JSONObject cfgObj) {
+                                recordingPermissions.put(key, cfgObj.optBoolean("can_record_commands", false));
+                                autoExecutePermissions.put(key, cfgObj.optBoolean("can_auto_execute", false));
+                            }
+                        }
+                    }
+
+                    Platform.runLater(() -> showConfigSelection(socket, br, displayName, configs, recordingPermissions, autoExecutePermissions, pw, isDark));
 
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
@@ -194,7 +212,56 @@ public class LoginScreen {
         primaryStage.show();
     }
 
-    private void showConfigSelection(Socket socket, String username, JSONObject configs, PrintWriter pw, boolean isDark) {
+    private void launchEnvironment(Socket socket, BufferedReader br, String username, String configKey, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, PrintWriter pw, boolean isDark, byte[] autoLoadCmdsData, boolean resetContainer) {
+        try {
+            JSONObject choice = new JSONObject();
+            choice.put("config", configKey);
+            if (resetContainer) {
+                choice.put("reset", true);
+            }
+            pw.println(choice.toString());
+
+            boolean canRecordCommands = recordingPermissions.getOrDefault(configKey, false);
+            boolean canAutoExecute = autoExecutePermissions.getOrDefault(configKey, false);
+
+            String line = null;
+            try {
+                line = br.readLine();
+            } catch (Exception ignored) { }
+
+            if (line != null) {
+                try {
+                    JSONObject sessionResp = new JSONObject(line);
+                    JSONObject perms = sessionResp.optJSONObject("permissions");
+                    if (perms != null) {
+                        canRecordCommands = perms.optBoolean("can_record_commands", canRecordCommands);
+                        canAutoExecute = perms.optBoolean("can_auto_execute", canAutoExecute);
+                    }
+                } catch (Exception ignored) { }
+            }
+
+            SocketTtyConnector connector = new SocketTtyConnector(socket);
+
+            if (autoLoadCmdsData != null && autoLoadCmdsData.length > 0) {
+                // Bezpieczne wczytanie poleceń po ustabilizowaniu sesji
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(800);
+                        connector.requestLoadCommands(autoLoadCmdsData);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }).start();
+            }
+
+            terminalApp.showTerminal(new Stage(), username, connector, isDark, canRecordCommands, canAutoExecute);
+            primaryStage.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void showConfigSelection(Socket socket, BufferedReader br, String username, JSONObject configs, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, PrintWriter pw, boolean isDark) {
         VBox layout = new VBox(10);
         layout.setAlignment(Pos.CENTER);
         layout.setPadding(new Insets(20));
@@ -207,24 +274,72 @@ public class LoginScreen {
 
         if (configs != null) {
             for (String key : configs.keySet()) {
-                Button b = new Button(configs.getString(key));
+                String label = key;
+                Object raw = configs.get(key);
+                if (raw instanceof JSONObject cfgObj) {
+                    label = cfgObj.optString("description", key);
+                } else if (raw instanceof String s) {
+                    label = s;
+                }
+
+                Button b = new Button(label);
                 b.setMaxWidth(Double.MAX_VALUE);
                 b.setStyle("-fx-background-color: #45475a; -fx-text-fill: #cdd6f4; -fx-cursor: hand;");
-                b.setOnAction(e -> {
-                    try {
-                        JSONObject choice = new JSONObject();
-                        choice.put("config", key);
-                        pw.println(choice.toString());
-
-                        SocketTtyConnector connector = new SocketTtyConnector(socket);
-                        terminalApp.showTerminal(new Stage(), username, connector, isDark);
-                        primaryStage.close();
-                    } catch (Exception ex) { ex.printStackTrace(); }
-                });
+                b.setOnAction(e -> launchEnvironment(socket, br, username, key, recordingPermissions, autoExecutePermissions, pw, isDark, null, false));
                 layout.getChildren().add(b);
             }
         }
 
-        primaryStage.setScene(new Scene(layout, 350, 400));
+        Separator sep = new Separator();
+        sep.setPadding(new Insets(5, 0, 5, 0));
+        layout.getChildren().add(sep);
+
+        Button loadCmdsBtn = new Button("📁 Wczytaj plik .cmds");
+        loadCmdsBtn.setMaxWidth(Double.MAX_VALUE);
+        loadCmdsBtn.setStyle("-fx-background-color: #89b4fa; -fx-text-fill: #1e1e2e; -fx-font-weight: bold; -fx-cursor: hand;");
+
+        loadCmdsBtn.setOnAction(e -> {
+            try {
+                FileChooser fc = new FileChooser();
+                fc.setTitle("Wybierz plik komend (.cmds)");
+                fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki komend (*.cmds)", "*.cmds", "*.txt"));
+                File selectedFile = fc.showOpenDialog(primaryStage);
+                if (selectedFile == null) return;
+
+                byte[] fileData = java.nio.file.Files.readAllBytes(selectedFile.toPath());
+                String filenameLower = selectedFile.getName().toLowerCase();
+                String fileContentStr = new String(fileData, StandardCharsets.UTF_8).toLowerCase();
+
+                String matchedKey = null;
+                if (configs != null && !configs.isEmpty()) {
+                    List<String> keys = new ArrayList<>(configs.keySet());
+                    keys.sort((k1, k2) -> Integer.compare(k2.length(), k1.length()));
+
+                    for (String key : keys) {
+                        String keyLower = key.toLowerCase();
+                        if (filenameLower.contains(keyLower) || fileContentStr.contains(keyLower)) {
+                            matchedKey = key;
+                            break;
+                        }
+                    }
+                }
+
+                if (matchedKey != null) {
+                    launchEnvironment(socket, br, username, matchedKey, recordingPermissions, autoExecutePermissions, pw, isDark, fileData, true);
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Rozpoznawanie obrazu");
+                    alert.setHeaderText("Nie rozpoznano automatycznie obrazu z pliku .cmds.");
+                    alert.setContentText("Nazwa pliku nie zawiera nazwy znanego środowiska.");
+                    alert.showAndWait();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        layout.getChildren().add(loadCmdsBtn);
+
+        primaryStage.setScene(new Scene(layout, 380, 440));
     }
 }

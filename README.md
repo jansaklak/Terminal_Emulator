@@ -10,30 +10,78 @@ Klient emulatora terminala oparty na technologii JavaFX oraz bibliotece JediTerm
 
 ## Użyte technologie
 - **Java 17+** (17 lub nowsza)
-- **JavaFX 17.0.8:** Interfejs użytkownika.
-- **JediTerm (2.65):** Rdzeń emulatora terminala (JetBrains).
+- **JavaFX 20.0.2:** Interfejs użytkownika.
+- **JediTerm (3.61):** Rdzeń emulatora terminala (JetBrains).
 - **Maven:** Zarządzanie projektem i zależnościami.
 - **JSON (org.json):** Protokół komunikacyjny z serwerem.
-- **Docker** Strona serwera z zainstalowanym MySQL
+- **Docker:** Strona serwera z zainstalowanym MySQL.
 
 ### Wymagania
-- JDK 17+.
-- Docker.
-- `Client/run.py` do uruchamiania klienta.
+- JRE / JDK 17+ na komputerze uruchamiającym klienta.
+- Docker (do uruchomienia środowiska serwerowego).
 
-### Kompilacja i start
-Aby uruchomić projekt, najpierw startuj serwer, a potem klienta przez `run.py`:
+---
+
+## Uruchamianie serwera i klienta
+
+### 1. Uruchomienie serwera (Docker)
+
+Przejdź do katalogu `Server` i uruchom kontenery:
 
 ```bash
-cd ./Server
+cd Server
 docker compose up --build -d
-cd ../Client
-python run.py
 ```
 
-Aby otworzyć kilka okien klienta naraz:
+---
+
+## Budowanie i uruchamianie klienta (Plik JAR)
+
+Wygenerowany plik JAR zawiera wszystkie zależności oraz biblioteki natywne JavaFX dla systemów:
+- **Windows** (x86_64)
+- **Linux** (x86_64 oraz **ARM64 / Raspberry Pi**)
+- **macOS** (x86_64 oraz Apple Silicon arm64)
+
+Plik JAR jest w pełni samowystarczalny i można go uruchomić na dowolnym komputerze / Raspberry Pi z zainstalowanym **Java 17+** (nie wymaga Mavena ani zewnętrznych instalacji JavaFX).
+
+### 1. Budowanie pliku JAR
+
+W katalogu `Client/` uruchom skrypt budujący:
+
+- **Linux / macOS:**
+  ```bash
+  cd Client
+  ./build_jar.sh
+  ```
+- **Windows:**
+  ```cmd
+  cd Client
+  build_jar.bat
+  ```
+- **Alternatywnie (Maven Wrapper):**
+  ```bash
+  cd Client
+  ./mvnw clean package
+  ```
+
+Gotowa paczka JAR zostanie zapisana w katalogu `Client/dist/TerminalClient.jar` (oraz w `Client/target/TerminalClient.jar`).
+
+### 2. Uruchamianie pliku JAR
+
+Plik `TerminalClient.jar` można przenieść na dowolny komputer z zainstalowaną Javą 17+ i uruchomić w konsoli:
 
 ```bash
-python run.py --clients 10
+java -jar TerminalClient.jar
 ```
 
+Lub z poziomu katalogu `Client/`:
+
+```bash
+java -jar dist/TerminalClient.jar
+```
+
+Na systemach Linux / macOS w katalogu `dist/` znajduje się również skrypt pomocniczy:
+
+```bash
+./dist/run.sh
+```

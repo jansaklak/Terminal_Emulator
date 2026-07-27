@@ -1,0 +1,38 @@
+{
+    "session": {
+        "mode": "sqlite",
+        "base_name": "sqlite_pociagi",
+        "image": "nouchka/sqlite3:latest",
+        "network": "lab-net",
+        "database_dir": "/data",
+        "database_path": "/data/pociagi.db",
+        "seed_sql": "resources/init.sql",
+        "seed_target": "/seed/init.sql",
+        "run_command": [
+            "run",
+            "-d",
+            "--name",
+            "{container_name}",
+            "--network",
+            "{network}",
+            "-e",
+            "SQLITE_DB_PATH={database_path}",
+            "-v",
+            "{data_volume}:{database_dir}",
+            "-v",
+            "{seed_sql_host_path}:{seed_target}:ro",
+            "--entrypoint",
+            "sh",
+            "{image}",
+            "-lc",
+            "mkdir -p {database_dir} && if [ ! -f {database_path} ]; then sqlite3 {database_path} < {seed_target}; fi && exec sleep infinity"
+        ],
+        "attach_command": [
+            "sh",
+            "-lc",
+            "echo 'Czekam na uruchomienie SQLite (Pociągi)...'; until [ -f /data/pociagi.db ]; do sleep 1; done; sqlite3 /data/pociagi.db"
+        ]
+    },
+    
+    "description": "SQLite - Pociągi Kolekcjonerskie"
+}

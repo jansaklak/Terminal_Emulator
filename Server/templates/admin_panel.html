@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Administracyjny Terminal Gateway</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --muted-color: #64748b;
+            --border-color: #e2e8f0;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger-color: #ef4444;
+            --danger-hover: #dc2626;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --radius: 6px;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-color);
+            letter-spacing: -0.3px;
+        }
+
+        .brand p {
+            font-size: 12px;
+            color: var(--muted-color);
+            margin-top: 2px;
+        }
+
+        .server-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .status-dot.offline {
+            background-color: var(--danger-color);
+        }
+
+        /* MAIN TABS */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted-color);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-color);
+        }
+
+        .nav-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* METRICS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+        }
+
+        .metric-card .title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted-color);
+        }
+
+        .metric-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-top: 4px;
+        }
+
+        /* CARDS & PANELS */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* ALERTS / NOTIFICATIONS */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        /* FORMS & CONTROLS */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--text-color);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: inherit;
+            color: #ffffff;
+            background-color: var(--primary-color);
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            color: var(--text-color);
+            background-color: #f1f5f9;
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        /* USER TABLE / LIST */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .user-pass-code {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .group-tag {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        /* LOGS TAB */
+        .logs-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 16px;
+            min-height: 500px;
+        }
+
+        .logs-sidebar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .logs-sidebar-header {
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logs-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .log-item {
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-color);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .log-item:hover,
+        .log-item.active {
+            background: #eff6ff;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .logs-viewer-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .logs-subtabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .log-subtab {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-right: 1px solid var(--border-color);
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted-color);
+        }
+
+        .log-subtab.active {
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .log-content-area {
+            flex: 1;
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 16px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            min-height: 440px;
+        }
+
+        .log-date-group {
+            margin-bottom: 8px;
+        }
+
+        .log-date-header {
+            padding: 6px 10px;
+            font-weight: 600;
+            font-size: 11px;
+            background: #f1f5f9;
+            color: #334155;
+            border-radius: var(--radius);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .log-date-header:hover {
+            background: #e2e8f0;
+        }
+
+        .log-count-badge {
+            background: #cbd5e1;
+            color: #1e293b;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .log-date-items {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-left: 4px;
+        }
+
+        .log-date-items.collapsed {
+            display: none;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.4);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        body.dark-mode {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --muted-color: #94a3b8;
+            --border-color: #334155;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+        }
+
+        body.dark-mode th {
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        body.dark-mode tr:hover {
+            background-color: #334155;
+        }
+
+        body.dark-mode .group-tag {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .user-pass-code {
+            background: #334155;
+            color: #f8fafc;
+        }
+
+        body.dark-mode .btn-secondary {
+            color: #f8fafc;
+            background-color: #334155;
+            border-color: #475569;
+        }
+
+        body.dark-mode .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        body.dark-mode .log-date-header {
+            background: #334155;
+            color: #f8fafc;
+        }
+
+        body.dark-mode .log-date-header:hover {
+            background: #475569;
+        }
+
+        body.dark-mode .log-count-badge {
+            background: #475569;
+            color: #f8fafc;
+        }
+
+        body.dark-mode .log-item:hover,
+        body.dark-mode .log-item.active {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+
+        body.dark-mode .log-subtab.active {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        body.dark-mode .logs-sidebar-header,
+        body.dark-mode .logs-subtabs {
+            background: #0f172a;
+        }
+
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="password"],
+        body.dark-mode input[type="file"],
+        body.dark-mode select {
+            background: #0f172a;
+            color: #f8fafc;
+            border-color: #334155;
+        }
+
+        body.dark-mode .alert-success {
+            background-color: #064e3b;
+            border-color: #047857;
+            color: #a7f3d0;
+        }
+
+        body.dark-mode .alert-info {
+            background-color: #1e3a8a;
+            border-color: #1d4ed8;
+            color: #bfdbfe;
+        }
+
+        body.dark-mode .alert-warning {
+            background-color: #78350f;
+            border-color: #b45309;
+            color: #fde68a;
+        }
+
+        body.dark-mode .modal-box {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        body.dark-mode #bulkActionsBar {
+            background: #334155 !important;
+            border-color: #475569 !important;
+        }
+
+        body.dark-mode #logViewerHeaderBox {
+            background: #0f172a !important;
+        }
+
+        @media (max-width: 768px) {
+            .logs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid-2,
+            .form-grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="brand">
+                <h1>Terminal Gateway Admin</h1>
+                <p>Zarządzanie użytkownikami, resetowanie haseł i podgląd logów live</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()"
+                    title="Przełącz motyw">🌙 Ciemny motyw</button>
+                <div class="server-status">
+                    <span id="statusDot" class="status-dot online"></span>
+                    <span id="statusText">Połączono z serwerem</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('users', this)">Użytkownicy</button>
+            <button class="nav-tab" onclick="switchTab('logs', this)">Logi serwera</button>
+        </nav>
+
+        <!-- NOTIFICATION BANNER -->
+        <div id="globalNotification"></div>
+
+        <!-- TAB 1: USERS -->
+        <div id="usersTab" class="tab-content active">
+            <!-- METRICS -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="title">Wszyscy Użytkownicy</div>
+                    <div class="value" id="metricUsers">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="title">Status Online</div>
+                    <div class="value" id="metricOnline">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="title">Utworzone Grupy</div>
+                    <div class="value" id="metricGroups">0</div>
+                </div>
+            </div>
+
+            <!-- MAIN USER LIST CARD -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Baza Użytkowników</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="loadAll()">↻ Odśwież</button>
+                </div>
+
+                <!-- FILTERS -->
+                <div class="form-grid-3" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label for="groupFilter">Filtruj wg grupy</label>
+                        <select id="groupFilter" onchange="clearSelection(); renderUsers()">
+                            <option value="all">Wszystkie grupy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="statusFilter">Filtruj wg statusu</label>
+                        <select id="statusFilter" onchange="clearSelection(); renderUsers()">
+                            <option value="all">Wszyscy użytkownicy</option>
+                            <option value="online">Tylko Online</option>
+                            <option value="offline">Tylko Offline</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userSearch">Szukaj użytkownika</label>
+                        <input id="userSearch" placeholder="Login lub nazwa wyświetlana..." oninput="renderUsers()">
+                    </div>
+                </div>
+
+                <!-- BULK ACTIONS TOOLBAR -->
+                <div id="bulkActionsBar"
+                    style="display: none; background: #f1f5f9; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                        <span>Zaznaczono: <strong id="selectedCount">0</strong> użytkowników</span>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearSelection()">Wyczyść
+                            zaznaczenie</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">➕ Dodaj zaznaczonych do
+                            grupy</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">🗑️ Usuń
+                            zaznaczonych</button>
+                    </div>
+                </div>
+
+                <!-- TABLE -->
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 38px; text-align: center;">
+                                    <input type="checkbox" id="selectAllCheckbox"
+                                        onchange="toggleSelectAllVisible(this.checked)"
+                                        title="Zaznacz/Odznacz wszystkich widocznych">
+                                </th>
+                                <th>Status</th>
+                                <th>Login</th>
+                                <th>Nazwa wyświetlana</th>
+                                <th>Hasło</th>
+                                <th>Grupy</th>
+                                <th style="text-align: right;">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--muted-color); padding: 20px;">
+                                    Ładowanie listy użytkowników...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ADD USER & CSV IMPORT -->
+            <div class="form-grid-2">
+                <!-- ADD USER FORM -->
+                <div class="card">
+                    <h2 class="card-title" style="margin-bottom: 14px;">Dodaj Użytkownika</h2>
+                    <form onsubmit="event.preventDefault(); addUser();">
+                        <div class="form-group">
+                            <label for="newUsername">Login (wymagany):</label>
+                            <input id="newUsername" placeholder="np. jan_kowalski" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newDisplayName">Nazwa wyświetlana:</label>
+                            <input id="newDisplayName" placeholder="np. Jan Kowalski">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Hasło (pozostaw puste dla generowanego):</label>
+                            <input id="newPassword" type="password" placeholder="Automatyczne lub własne">
+                        </div>
+                        <div class="form-group">
+                            <label for="newGroup">Grupa początkowa (opcjonalnie):</label>
+                            <input id="newGroup" placeholder="np. bazy1">
+                        </div>
+                        <button type="submit" class="btn" style="width: 100%; margin-top: 6px;">+ Utwórz konto</button>
+                    </form>
+                </div>
+
+                <!-- CSV IMPORT -->
+                <div class="card">
+                    <h2 class="card-title" style="margin-bottom: 14px;">Grupowy Import z Pliku CSV</h2>
+                    <p style="color: var(--muted-color); font-size: 12px; margin-bottom: 14px;">
+                        Plik CSV powinien zawierać wiersze w formacie: <code>Nazwisko;Imię</code>
+                    </p>
+                    <form onsubmit="event.preventDefault(); importCSV();">
+                        <div class="form-group">
+                            <label for="groupName">Nazwa grupy dla importu:</label>
+                            <input id="groupName" placeholder="np. Rok_2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="csvFile">Plik CSV:</label>
+                            <input type="file" id="csvFile" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 6px;">📁
+                            Importuj listę z CSV</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LOGS -->
+        <div id="logsTab" class="tab-content">
+            <div class="logs-grid">
+                <div class="logs-sidebar">
+                    <div class="logs-sidebar-header" style="display: flex; flex-direction: column; gap: 6px;">
+                        <span>Pliki Logów</span>
+                        <select id="logUserFilter" onchange="refreshLogsList()" style="font-size: 11px; padding: 4px 6px;">
+                            <option value="all">Wszyscy użytkownicy</option>
+                        </select>
+                    </div>
+                    <div id="logsList" class="logs-list">
+                        <div style="padding: 10px; color: var(--muted-color);">Ładowanie...</div>
+                    </div>
+                </div>
+                <div class="logs-viewer-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-bottom: 1px solid var(--border-color);" id="logViewerHeaderBox">
+                        <div id="logTabsHeader" class="logs-subtabs" style="border-bottom: none; flex: 1;"></div>
+                        <div id="logViewerActions" style="padding: 4px 10px; display: none;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="downloadCurrentCmds()" title="Pobierz surowy plik komend sesji (.cmds)">
+                                📥 Pobierz plik cmds
+                            </button>
+                        </div>
+                    </div>
+                    <div id="logViewerContent" class="log-content-area">Wybierz log z listy po lewej stronie, aby
+                        otworzyć podgląd.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FOR CSV IMPORT RESULT OR USER EDIT -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Informacja</h3>
+                <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+            </div>
+            <div id="modalBody"></div>
+            <div style="margin-top: 16px; text-align: right;">
+                <button class="btn btn-secondary" onclick="closeModal()">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cachedUsers = null, cachedOnline = null;
+        let openLogs = {};
+        let activeLogFile = null;
+        let activeMainTab = 'users';
+        let selectedUsernames = new Set();
+        let visibleUsernames = [];
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('globalNotification');
+            const alertClass = type === 'danger' ? 'alert-warning' : 'alert-success';
+            container.innerHTML = `
+                <div class="alert ${alertClass}">
+                    <div>${message}</div>
+                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">✕</button>
+                </div>
+            `;
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.remove('active');
+        }
+
+        function showModal(title, contentHtml) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = contentHtml;
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        function getOnlineUsersSet() {
+            return new Set(Object.values(cachedOnline || {}).map(s => s.user));
+        }
+
+        function getAllUsers() {
+            return Object.values(cachedUsers || {});
+        }
+
+        function updateMetrics() {
+            const users = getAllUsers();
+            const online = getOnlineUsersSet();
+            const groups = new Set();
+            users.forEach(user => (user.groups || []).forEach(group => groups.add(group)));
+
+            document.getElementById('metricUsers').textContent = users.length;
+            document.getElementById('metricOnline').textContent = online.size;
+            document.getElementById('metricGroups').textContent = groups.size;
+        }
+
+        async function loadAll() {
+            try {
+                const [usersRes, onlineRes] = await Promise.all([
+                    fetch('/api/users').then(r => r.json()),
+                    fetch('/api/online').then(r => r.json())
+                ]);
+
+                cachedUsers = usersRes;
+                cachedOnline = onlineRes;
+                updateGroups();
+                updateLogUserFilterOptions();
+                updateMetrics();
+                renderUsers();
+
+                document.getElementById('statusDot').className = "status-dot online";
+                document.getElementById('statusText').textContent = "Połączono z serwerem";
+
+                if (activeMainTab === 'logs') {
+                    refreshLogsList();
+                }
+            } catch (e) {
+                document.getElementById('statusDot').className = "status-dot offline";
+                document.getElementById('statusText').textContent = "Błąd połączenia z API";
+            }
+        }
+
+        function switchTab(tabId, btn) {
+            activeMainTab = tabId;
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (btn) btn.classList.add('active');
+            document.getElementById(tabId + 'Tab').classList.add('active');
+
+            if (tabId === 'logs') {
+                refreshLogsList();
+            }
+        }
+
+        function updateGroups() {
+            const groups = new Set();
+            getAllUsers().forEach(user => (user.groups || []).forEach(group => groups.add(group)));
+            const sortedGroups = Array.from(groups).sort();
+
+            const select = document.getElementById('groupFilter');
+            const current = select.value;
+            select.innerHTML = '<option value="all">Wszystkie grupy</option>';
+            sortedGroups.forEach(g => {
+                select.innerHTML += `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`;
+            });
+            select.value = Array.from(select.options).some(o => o.value === current) ? current : 'all';
+
+            const datalist = document.getElementById('existingGroupsList');
+            if (datalist) {
+                datalist.innerHTML = sortedGroups.map(g => `<option value="${escapeHtml(g)}">`).join('');
+            }
+        }
+
+        function updateLogUserFilterOptions() {
+            const select = document.getElementById('logUserFilter');
+            if (!select) return;
+            const current = select.value;
+            const users = getAllUsers().map(u => u.username).sort();
+
+            select.innerHTML = '<option value="all">Wszyscy użytkownicy</option>';
+            users.forEach(u => {
+                select.innerHTML += `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`;
+            });
+            select.value = Array.from(select.options).some(o => o.value === current) ? current : 'all';
+        }
+
+        function renderUsers() {
+            const groupFilter = document.getElementById('groupFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchQuery = document.getElementById('userSearch').value.trim().toLowerCase();
+            const online = getOnlineUsersSet();
+
+            const users = getAllUsers().filter(user => {
+                const isOnline = online.has(user.username);
+                const matchesGroup = groupFilter === 'all' || (user.groups && user.groups.includes(groupFilter));
+                const matchesStatus = statusFilter === 'all' || (statusFilter === 'online' && isOnline) || (statusFilter === 'offline' && !isOnline);
+                const haystack = `${user.username || ''} ${user.display_name || ''}`.toLowerCase();
+                const matchesSearch = !searchQuery || haystack.includes(searchQuery);
+
+                return matchesGroup && matchesStatus && matchesSearch;
+            });
+
+            visibleUsernames = users.map(u => u.username);
+
+            const tbody = document.getElementById('userTableBody');
+            if (!users.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--muted-color); padding: 20px;">Brak użytkowników spełniających kryteria.</td></tr>`;
+                updateHeaderCheckbox();
+                updateBulkActionsToolbar();
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                const isOnline = online.has(user.username);
+                const userJson = JSON.stringify(user.username);
+                const isChecked = selectedUsernames.has(user.username);
+                const groupsHtml = (user.groups && user.groups.length)
+                    ? user.groups.map(g => `<span class="group-tag">${escapeHtml(g)}</span>`).join('')
+                    : '<span style="color: var(--muted-color); font-size:11px;">Brak</span>';
+
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="user-select-cb" value="${escapeHtml(user.username)}" ${isChecked ? 'checked' : ''} onchange="toggleSelectUser('${escapeHtml(user.username)}', this.checked)">
+                        </td>
+                        <td>
+                            <span class="status-dot ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Online' : 'Offline'}"></span>
+                            <span style="font-size:11px; margin-left: 4px;">${isOnline ? 'Online' : 'Offline'}</span>
+                        </td>
+                        <td><strong>${escapeHtml(user.username)}</strong></td>
+                        <td>${escapeHtml(user.display_name || user.username)}</td>
+                        <td>
+                            <span class="user-pass-code" id="pass_${escapeHtml(user.username)}" data-pass="${escapeHtml(user.password || '')}" data-hidden="true">••••••••</span>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='togglePassView(${userJson})' title="Pokaż / Ukryj hasło">👁️</button>
+                        </td>
+                        <td>${groupsHtml}</td>
+                        <td class="actions-cell">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='goToUserLogs(${userJson})' title="Zobacz logi użytkownika">📄 Logi</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='resetPassword(${userJson})' title="Resetuj hasło użytkownika">🔑 Resetuj hasło</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='editUserModal(${userJson})' title="Edytuj dane">✏️ Edytuj</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick='delUser(${userJson})' title="Usuń konto">Usuń</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateHeaderCheckbox();
+            updateBulkActionsToolbar();
+        }
+
+        function updateHeaderCheckbox() {
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            if (!selectAllCb) return;
+            if (visibleUsernames.length === 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+                return;
+            }
+
+            const selectedVisibleCount = visibleUsernames.filter(u => selectedUsernames.has(u)).length;
+            if (selectedVisibleCount === visibleUsernames.length) {
+                selectAllCb.checked = true;
+                selectAllCb.indeterminate = false;
+            } else if (selectedVisibleCount > 0) {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = true;
+            } else {
+                selectAllCb.checked = false;
+                selectAllCb.indeterminate = false;
+            }
+        }
+
+        function updateBulkActionsToolbar() {
+            const bar = document.getElementById('bulkActionsBar');
+            const countEl = document.getElementById('selectedCount');
+            if (!bar || !countEl) return;
+
+            countEl.textContent = selectedUsernames.size;
+            if (selectedUsernames.size > 0) {
+                bar.style.display = 'flex';
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        function toggleSelectUser(username, isChecked) {
+            if (isChecked) {
+                selectedUsernames.add(username);
+            } else {
+                selectedUsernames.delete(username);
+            }
+            updateHeaderCheckbox();
+            updateBulkActionsToolbar();
+        }
+
+        function toggleSelectAllVisible(isChecked) {
+            if (isChecked) {
+                selectedUsernames.clear();
+                visibleUsernames.forEach(u => selectedUsernames.add(u));
+            } else {
+                visibleUsernames.forEach(u => selectedUsernames.delete(u));
+            }
+            renderUsers();
+        }
+
+        function clearSelection() {
+            selectedUsernames.clear();
+            renderUsers();
+        }
+
+        async function executeBulkDelete() {
+            if (selectedUsernames.size === 0) return;
+            const count = selectedUsernames.size;
+            if (!confirm(`Czy na pewno chcesz usunąć ${count} zaznaczonych użytkowników?`)) return;
+
+            try {
+                const res = await fetch('/api/users/bulk-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernames: Array.from(selectedUsernames) })
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    showNotification(`Pomyślnie usunięto ${data.deleted_count} użytkowników.`);
+                    selectedUsernames.clear();
+                    await loadAll();
+                } else {
+                    alert(data.error || 'Błąd podczas usuwania użytkowników');
+                }
+            } catch (e) {
+                alert('Wystąpił błąd podczas komunikacji z serwerem');
+            }
+        }
+
+        async function executeBulkAddGroup() {
+            if (selectedUsernames.size === 0) {
+                alert('Brak zaznaczonych użytkowników');
+                return;
+            }
+
+            const groupName = prompt(`Wpisz nazwę grupy, do której chcesz dodać ${selectedUsernames.size} zaznaczonych użytkowników:`);
+            if (groupName === null) return;
+            const trimmedGroup = groupName.trim();
+            if (!trimmedGroup) {
+                alert('Nie podano nazwy grupy');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users/bulk-add-group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernames: Array.from(selectedUsernames), group: trimmedGroup })
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    showNotification(`Dodano grupę "${escapeHtml(data.group)}" dla ${data.updated_count} użytkowników.`);
+                    selectedUsernames.clear();
+                    await loadAll();
+                } else {
+                    alert(data.error || 'Błąd podczas dodawania grupy');
+                }
+            } catch (e) {
+                alert('Wystąpił błąd podczas komunikacji z serwerem');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('admin_theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                const btn = document.getElementById('themeToggleBtn');
+                if (btn) btn.textContent = '☀️ Jasny motyw';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('admin_theme', isDark ? 'dark' : 'light');
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.textContent = isDark ? '☀️ Jasny motyw' : '🌙 Ciemny motyw';
+        }
+
+        initTheme();
+
+        function togglePassView(username) {
+            const el = document.getElementById('pass_' + username);
+            if (!el) return;
+            const realPass = el.getAttribute('data-pass') || '';
+            const isHidden = el.getAttribute('data-hidden') !== 'false';
+            if (isHidden) {
+                el.textContent = realPass;
+                el.setAttribute('data-hidden', 'false');
+            } else {
+                el.textContent = '••••••••';
+                el.setAttribute('data-hidden', 'true');
+            }
+        }
+
+        async function addUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const display_name = document.getElementById('newDisplayName').value.trim();
+            const group = document.getElementById('newGroup').value.trim();
+
+            if (!username) {
+                alert('Podaj login użytkownika');
+                return;
+            }
+
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, display_name, group })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || 'Błąd podczas dodawania użytkownika');
+                return;
+            }
+
+            // Success notification showing credentials clearly
+            showNotification(`
+                <strong>Utworzono konto użytkownika:</strong> <code>${escapeHtml(data.username)}</code> | 
+                <strong>Hasło:</strong> <code class="user-pass-code">${escapeHtml(data.password)}</code>
+            `);
+
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newDisplayName').value = '';
+            document.getElementById('newGroup').value = '';
+            await loadAll();
+        }
+
+        async function resetPassword(username) {
+            if (!confirm(`Czy na pewno chcesz zresetować hasło dla użytkownika ${username}?`)) return;
+
+            const response = await fetch(`/api/users/${encodeURIComponent(username)}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || 'Nie udało się zresetować hasła');
+                return;
+            }
+
+            showModal('Reset Hasła Zakończony', `
+                <p style="margin-bottom: 12px;">Nowe wygenerowane hasło dla użytkownika <strong>${escapeHtml(username)}</strong>:</p>
+                <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 16px; font-weight: bold; text-align: center; color: var(--primary-color);">
+                    ${escapeHtml(data.password)}
+                </div>
+            `);
+            await loadAll();
+        }
+
+        function editUserModal(username) {
+            const user = (cachedUsers || {})[username];
+            if (!user) return;
+            showModal(`Edycja użytkownika: ${escapeHtml(user.username)}`, `
+                <form onsubmit="event.preventDefault(); saveUserEdit(${JSON.stringify(user.username)});">
+                    <div class="form-group">
+                        <label>Nazwa wyświetlana:</label>
+                        <input id="editDisplayName" value="${escapeHtml(user.display_name || user.username)}">
+                    </div>
+                    <div class="form-group">
+                        <label>Grupy (oddziel przecinkami):</label>
+                        <input id="editGroups" value="${escapeHtml((user.groups || []).join(', '))}">
+                    </div>
+                    <div class="form-group">
+                        <label>Zmień hasło (opcjonalnie):</label>
+                        <input id="editPassword" type="password" placeholder="Wpisz nowe hasło lub zostaw puste">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Zapisz zmiany</button>
+                </form>
+            `);
+        }
+
+        async function saveUserEdit(username) {
+            const display_name = document.getElementById('editDisplayName').value;
+            const groups = document.getElementById('editGroups').value;
+            const password = document.getElementById('editPassword').value;
+
+            const payload = { display_name, groups };
+            if (password.trim()) payload.password = password.trim();
+
+            const res = await fetch(`/api/users/${encodeURIComponent(username)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                closeModal();
+                showNotification(`Zaktualizowano dane użytkownika ${escapeHtml(username)}`);
+                loadAll();
+            } else {
+                alert('Błąd podczas edycji użytkownika');
+            }
+        }
+
+        async function delUser(name) {
+            if (!confirm(`Czy na pewno chcesz usunąć użytkownika ${name}?`)) return;
+
+            await fetch('/api/users/' + encodeURIComponent(name), { method: 'DELETE' });
+            showNotification(`Usunięto użytkownika ${escapeHtml(name)}`);
+            loadAll();
+        }
+
+        async function importCSV() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                alert('Wybierz plik CSV');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('group', document.getElementById('groupName').value || 'Import');
+
+            const response = await fetch('/api/import', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.error || 'Import nie powiódł się');
+                return;
+            }
+
+            const userRowsHtml = (data.users || []).map(u => `
+                <tr>
+                    <td><strong>${escapeHtml(u.username)}</strong></td>
+                    <td>${escapeHtml(u.display_name)}</td>
+                    <td><code class="user-pass-code">${escapeHtml(u.password)}</code></td>
+                </tr>
+            `).join('');
+
+            showModal(`Import zakończony (${data.imported_count} użytkowników)`, `
+                <p style="margin-bottom: 10px; color: var(--muted-color);">Oto wygenerowane dane logowania dla zaimportowanych kont:</p>
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <table>
+                        <thead>
+                            <tr><th>Login</th><th>Nazwa</th><th>Wygenerowane Hasło</th></tr>
+                        </thead>
+                        <tbody>${userRowsHtml}</tbody>
+                    </table>
+                </div>
+            `);
+
+            fileInput.value = '';
+            loadAll();
+        }
+
+        // --- LOGS LOGIC ---
+        let collapsedDateGroups = {};
+
+        function toggleDateGroup(dateKey) {
+            collapsedDateGroups[dateKey] = !collapsedDateGroups[dateKey];
+            const el = document.getElementById('group_items_' + dateKey);
+            if (el) {
+                if (collapsedDateGroups[dateKey]) {
+                    el.classList.add('collapsed');
+                } else {
+                    el.classList.remove('collapsed');
+                }
+            }
+        }
+
+        async function goToUserLogs(username) {
+            const logsTabBtn = document.querySelectorAll('.nav-tab')[1];
+            switchTab('logs', logsTabBtn);
+
+            updateLogUserFilterOptions();
+            const select = document.getElementById('logUserFilter');
+            if (select) {
+                select.value = username;
+            }
+
+            await refreshLogsList();
+
+            try {
+                const response = await fetch('/api/logs');
+                const logsData = await response.json();
+                const filterLower = username.toLowerCase();
+                const userLogs = logsData.filter(item => {
+                    const fn = (typeof item === 'string') ? item : item.filename;
+                    const baseName = fn.split('/').pop().toLowerCase();
+                    return baseName.startsWith(filterLower + '_') || baseName.includes(filterLower);
+                });
+
+                if (userLogs.length > 0) {
+                    const firstLog = (typeof userLogs[0] === 'string') ? userLogs[0] : userLogs[0].filename;
+                    openLog(firstLog);
+                }
+            } catch (e) {
+                console.error("Błąd otwierania logu użytkownika", e);
+            }
+        }
+
+        async function refreshLogsList() {
+            try {
+                const response = await fetch('/api/logs');
+                const logsData = await response.json();
+                const container = document.getElementById('logsList');
+                const filterVal = document.getElementById('logUserFilter')?.value || 'all';
+
+                if (!logsData || !logsData.length) {
+                    container.innerHTML = '<div style="padding: 10px; color: var(--muted-color);">Brak plików logów</div>';
+                    return;
+                }
+
+                const filteredLogsData = logsData.filter(item => {
+                    if (filterVal === 'all') return true;
+                    const fn = (typeof item === 'string') ? item : item.filename;
+                    const baseName = fn.split('/').pop().toLowerCase();
+                    const filterLower = filterVal.toLowerCase();
+                    return baseName.startsWith(filterLower + '_') || baseName.includes(filterLower);
+                });
+
+                if (!filteredLogsData.length) {
+                    container.innerHTML = `<div style="padding: 12px; color: var(--muted-color); font-size: 12px;">Brak logów dla użytkownika <strong>${escapeHtml(filterVal)}</strong>.</div>`;
+                    return;
+                }
+
+                const grouped = {};
+                const todayStr = new Date().toISOString().split('T')[0];
+                const yestDate = new Date();
+                yestDate.setDate(yestDate.getDate() - 1);
+                const yestStr = yestDate.toISOString().split('T')[0];
+
+                filteredLogsData.forEach(item => {
+                    let fn, dateKey, timeStr;
+                    if (typeof item === 'string') {
+                        fn = item;
+                        dateKey = 'Pozostałe';
+                        timeStr = '';
+                    } else {
+                        fn = item.filename;
+                        dateKey = item.date || 'Pozostałe';
+                        timeStr = item.time || '';
+                    }
+
+                    if (!grouped[dateKey]) {
+                        grouped[dateKey] = [];
+                    }
+                    grouped[dateKey].push({ filename: fn, time: timeStr });
+                });
+
+                let html = '';
+                Object.keys(grouped).forEach(dateKey => {
+                    let dateLabel = dateKey;
+                    if (dateKey === todayStr) {
+                        dateLabel = `Dzisiaj (${dateKey})`;
+                    } else if (dateKey === yestStr) {
+                        dateLabel = `Wczoraj (${dateKey})`;
+                    } else if (dateKey !== 'Pozostałe') {
+                        dateLabel = dateKey;
+                    }
+
+                    const isCollapsed = collapsedDateGroups[dateKey];
+                    const items = grouped[dateKey];
+
+                    html += `
+                        <div class="log-date-group">
+                            <div class="log-date-header" onclick="toggleDateGroup(${JSON.stringify(dateKey)})">
+                                <span>📅 ${escapeHtml(dateLabel)}</span>
+                                <span class="log-count-badge">${items.length}</span>
+                            </div>
+                            <div id="group_items_${escapeHtml(dateKey)}" class="log-date-items ${isCollapsed ? 'collapsed' : ''}">
+                                ${items.map(file => {
+                        const fn = file.filename;
+                        const timeLabel = file.time ? `<span style="font-size:10px; color:var(--muted-color); margin-left: 6px; flex-shrink:0;">${escapeHtml(file.time)}</span>` : '';
+                        return `
+                                        <div class="log-item ${activeLogFile === fn ? 'active' : ''}" onclick='openLog(${JSON.stringify(fn)})' title="${escapeHtml(fn)}" style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="overflow:hidden; text-overflow:ellipsis;">📄 ${escapeHtml(fn.split('/').pop())}</span>
+                                            ${timeLabel}
+                                        </div>
+                                    `;
+                    }).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (e) {
+                console.error("Błąd pobierania listy logów", e);
+            }
+        }
+
+        function openLog(filename) {
+            if (!openLogs[filename]) {
+                openLogs[filename] = { content: "Ładowanie...", lastSize: 0 };
+            }
+            activeLogFile = filename;
+            refreshLogsList();
+            renderLogTabs();
+            updateLogContent();
+        }
+
+        function closeLog(filename, event) {
+            if (event) event.stopPropagation();
+            delete openLogs[filename];
+            if (activeLogFile === filename) {
+                const keys = Object.keys(openLogs);
+                activeLogFile = keys.length > 0 ? keys[keys.length - 1] : null;
+            }
+            refreshLogsList();
+            renderLogTabs();
+            updateLogContent();
+        }
+
+        function renderLogTabs() {
+            const header = document.getElementById('logTabsHeader');
+            header.innerHTML = Object.keys(openLogs).map(f => `
+                <div class="log-subtab ${activeLogFile === f ? 'active' : ''}" onclick='setActiveLog(${JSON.stringify(f)})'>
+                    <span>${escapeHtml(f.split('/').pop().split('_').slice(0, 2).join('_') || f)}</span>
+                    <span onclick='closeLog(${JSON.stringify(f)}, event)' style="cursor:pointer; font-weight:bold;">×</span>
+                </div>
+            `).join('');
+            updateLogActionsVisibility();
+        }
+
+        function setActiveLog(f) {
+            activeLogFile = f;
+            refreshLogsList();
+            renderLogTabs();
+            updateLogContent();
+        }
+
+        function updateLogActionsVisibility() {
+            const actionsBox = document.getElementById('logViewerActions');
+            if (!actionsBox) return;
+            if (activeLogFile) {
+                actionsBox.style.display = 'block';
+            } else {
+                actionsBox.style.display = 'none';
+            }
+        }
+
+        function downloadCurrentCmds() {
+            if (!activeLogFile) {
+                alert('Nie wybrano pliku logu.');
+                return;
+            }
+            const cleanFn = activeLogFile.split('/').pop();
+            const downloadUrl = `/api/logs/${encodeURIComponent(cleanFn)}/download-cmds`;
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        async function updateLogContent() {
+            const viewer = document.getElementById('logViewerContent');
+            updateLogActionsVisibility();
+            if (!activeLogFile) {
+                viewer.textContent = "Wybierz log z listy po lewej stronie, aby otworzyć podgląd.";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/logs/${activeLogFile}`);
+                const data = await res.json();
+                if (data.ok) {
+                    openLogs[activeLogFile].content = data.content;
+                    if (activeLogFile) {
+                        viewer.textContent = openLogs[activeLogFile].content;
+                        viewer.scrollTop = viewer.scrollHeight;
+                    }
+                }
+            } catch (e) {
+                console.error("Błąd pobierania logu", e);
+            }
+        }
+
+        // Polling
+        loadAll();
+        setInterval(loadAll, 5000);
+        setInterval(() => {
+            if (activeLogFile) updateLogContent();
+        }, 2000);
+    </script>
+</body>
+
+</html>

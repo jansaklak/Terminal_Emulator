@@ -7,7 +7,16 @@
         "mount_path": "/shared_data",
         "workdir": "/shared_data",
         "hostname_template": "{user}-lab",
-        "service_command": [
+        "run_command": [
+            "run",
+            "-d",
+            "--name",
+            "{container_name}",
+            "--hostname",
+            "{hostname}",
+            "-v",
+            "{data_volume}:{mount_path}",
+            "{image}",
             "sleep",
             "infinity"
         ],
@@ -15,7 +24,6 @@
             "/bin/bash"
         ]
     },
-    "cpu_limit": "0.5",
-    "mem_limit": "256m",
+    
     "description": "Powłoka bash (Ubuntu)"
 }

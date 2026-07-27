@@ -17,14 +17,6 @@
             "bazy1"
         ]
     },
-    "adam_kow": {
-        "username": "adam_kow",
-        "password": "ea332f1f",
-        "display_name": "Adam_Kowalski",
-        "groups": [
-            "bazy1"
-        ]
-    },
     "anna_iks": {
         "username": "anna_iks",
         "password": "77f97b91",
@@ -45,14 +37,6 @@
         "username": "grzegorz_kli",
         "password": "8fbeaf78",
         "display_name": "Grzegorz_Klimczak",
-        "groups": [
-            "bazy1"
-        ]
-    },
-    "adam_mic": {
-        "username": "adam_mic",
-        "password": "2372258f",
-        "display_name": "Adam_Mickiewicz",
         "groups": [
             "bazy1"
         ]
@@ -193,14 +177,6 @@
             "bazy3"
         ]
     },
-    "adam_glo": {
-        "username": "adam_glo",
-        "password": "4d7f7c19",
-        "display_name": "Adam_Głowacki",
-        "groups": [
-            "bazy3"
-        ]
-    },
     "mazur_slo": {
         "username": "mazur_slo",
         "password": "643cc5e6",
@@ -225,10 +201,20 @@
             "bazy3"
         ]
     },
-    "asd": {
-        "username": "asd",
-        "password": "asd",
-        "display_name": "asd",
-        "groups": []
+    "michal": {
+        "username": "michal",
+        "password": "b2154b41",
+        "display_name": "mmichal",
+        "groups": [
+            "bazy4"
+        ]
+    },
+    "adam_kow": {
+        "username": "adam_kow",
+        "password": "ea332f1f",
+        "display_name": "adam_kow",
+        "groups": [
+            "bazy1"
+        ]
     }
 }

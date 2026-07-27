@@ -1,0 +1,40 @@
+{
+    "session": {
+        "mode": "postgres",
+        "base_name": "postgres_lab",
+        "image": "postgres:15-alpine",
+        "network": "lab-net",
+        "database": "labdb",
+        "user": "labuser",
+        "password": "labpass",
+        "root_password": "rootpass",
+        "seed_sql": "resources/init.sql",
+        "seed_target": "/docker-entrypoint-initdb.d/init.sql",
+        "run_command": [
+            "run",
+            "-d",
+            "--name",
+            "{container_name}",
+            "--network",
+            "{network}",
+            "-e",
+            "POSTGRES_PASSWORD={root_password}",
+            "-e",
+            "POSTGRES_DB={database}",
+            "-e",
+            "POSTGRES_USER={user}",
+            "-v",
+            "{data_volume}:/var/lib/postgresql/data",
+            "-v",
+            "{seed_sql_host_path}:{seed_target}:ro",
+            "{image}"
+        ],
+        "attach_command": [
+            "sh",
+            "-c",
+            "echo 'Czekam na uruchomienie PostgreSQL...'; i=0; max=30; until pg_isready -h 127.0.0.1 -U {user} -d {database} >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'PostgreSQL nie uruchomił się w czasie' >&2; fi; PGPASSWORD={password} exec psql -h 127.0.0.1 -U {user} -d {database}"
+        ]
+    },
+    
+    "description": "PostgreSQL - Laboratorium"
+}
