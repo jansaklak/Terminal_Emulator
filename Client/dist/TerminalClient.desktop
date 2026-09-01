@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Terminal Gateway Client
+Comment=Desktopowy klient emulatora terminala z obsługą sesji i kontenerów
+Exec=bash -c "cd $(dirname %k) && ./run-linux.sh"
+Terminal=false
+Categories=Utility;Development;

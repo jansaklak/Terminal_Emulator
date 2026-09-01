@@ -20,14 +20,13 @@ Repo_TerminalEmulator/
 target/
 **/target/
 build/
-dist/
-/dist/
 nbdist/
 .m2/
 **/.m2/
 *.class
 *.jar
-!Client/dist/.gitkeep
+!Client/dist/
+!Client/dist/**
 *.zip
 TestBase64*
 
