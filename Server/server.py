@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Serwer Terminali - brama uruchamiająca i podłączająca sesje Dockerowe.
-Plik zawiera funkcje do wczytywania konfiguracji, zarządzania sesjami
-i komunikacji z klientem przez gniazdo TCP. Komentarze są w języku polskim.
-"""
 import socket
 import threading
 import os
