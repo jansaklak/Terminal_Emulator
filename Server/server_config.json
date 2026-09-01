@@ -1,5 +1,6 @@
 {
     "HOST": "0.0.0.0",
     "PORT": 51234,
-    "LOG_DIR": "/var/log/terminal-server"
+    "LOG_DIR": "/var/log/terminal-server",
+    "TIMEZONE": "Europe/Warsaw"
 }

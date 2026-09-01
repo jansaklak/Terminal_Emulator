@@ -26,6 +26,14 @@ import time
 import shutil
 import base64
 
+def apply_timezone(tz_name):
+    if tz_name:
+        os.environ['TZ'] = tz_name
+        if hasattr(time, 'tzset'):
+            time.tzset()
+
+apply_timezone('Europe/Warsaw')
+
 # Ścieżki do plików konfiguracyjnych JSON
 CONFIG_FILE = Path("server_config.json")
 IMAGES_DIR = Path("images")
@@ -61,10 +69,12 @@ def get_live_config():
     Zwraca słownik z kluczami: HOST, PORT, CONFIGS.
     """
     try:
-        base_cfg = {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
+        base_cfg = {"HOST": "0.0.0.0", "PORT": 51234, "TIMEZONE": "Europe/Warsaw", "CONFIGS": {}}
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 base_cfg.update(json.load(f))
+
+        apply_timezone(base_cfg.get("TIMEZONE"))
 
         # Skanowanie folderu images w poszukiwaniu konfiguracji
         if IMAGES_DIR.exists():
@@ -567,6 +577,11 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
     pid = os.fork()
     if pid == 0:
         os.setsid()
+        try:
+            import fcntl, termios
+            fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
+        except Exception:
+            pass
         os.dup2(slave_fd, 0)
         os.dup2(slave_fd, 1)
         os.dup2(slave_fd, 2)
@@ -607,16 +622,23 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
     # Wątek czytający z PTY i wysyłający do klienta
     threading.Thread(target=pty_to_tcp, daemon=True).start()
 
+    tcp_in_buffer = b""
     try:
         while not stop_event.is_set():
             try:
                 conn.settimeout(1.0)
                 data = conn.recv(1024)
                 if not data: break
-                # Obsługa komunikatów kontrolnych (resize/reset oraz save/load komend)
-                if b"__control__" in data:
+                
+                # Obsługa komunikatów kontrolnych (resize/reset oraz save/load komend) z buforowaniem fragmentacji
+                if b"__control__" in data or tcp_in_buffer:
+                    tcp_in_buffer += data
+                    if b"\n" not in tcp_in_buffer:
+                        # Oczekujemy na resztę ramki JSON
+                        continue
+                    line_data, tcp_in_buffer = tcp_in_buffer.split(b"\n", 1)
                     try:
-                        payload = json.loads(data.decode("utf-8", errors="strict").strip())
+                        payload = json.loads(line_data.decode("utf-8", errors="strict").strip())
                     except Exception:
                         payload = None
 

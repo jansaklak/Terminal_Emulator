@@ -1,15 +1,34 @@
 {
+    "_comment_header": "Główny plik konfiguracyjny definicji nowego obrazu/usługi w środowisku Terminal Emulator",
     "session": {
-        "mode": "mysql",
+        "_comment_base_name": "Unikalna nazwa bazowa używana do generowania nazw kontenerów i wolumenów dla sesji użytkowników",
         "base_name": "mysql_pociagi",
+
+        "_comment_image": "Nazwa i tag oficjalnego obrazu Docker z rejestru Docker Hub, na podstawie którego tworzony jest kontener",
         "image": "mysql:8.0",
+
+        "_comment_network": "Nazwa izolowanej sieci Docker (np. lab-net), w której uruchamiane są kontenery",
         "network": "lab-net",
+
+        "_comment_database": "Domyślna nazwa tworzonej bazy danych przy inicjalizacji kontenera",
         "database": "labdb",
+
+        "_comment_user": "Nazwa domyślnego użytkownika bazy danych tworzonego dla sesji",
         "user": "labuser",
+
+        "_comment_password": "Hasło domyślnego użytkownika bazy danych",
         "password": "labpass",
+
+        "_comment_root_password": "Hasło superużytkownika (root / administratora) bazy danych",
         "root_password": "rootpass",
+
+        "_comment_seed_sql": "Względna ścieżka do skryptu inicjalizującego SQL w folderze obrazu (tworzenie tabel i danych początkowych)",
         "seed_sql": "resources/init.sql",
+
+        "_comment_seed_target": "Docelowa ścieżka wewnątrz kontenera Docker, pod którą montowany jest skrypt inicjalizujący",
         "seed_target": "/docker-entrypoint-initdb.d/init.sql",
+
+        "_comment_run_command": "Lista argumentów polecenia 'docker' do uruchomienia i skonfigurowania nowego kontenera",
         "run_command": [
             "run",
             "-d",
@@ -31,12 +50,15 @@
             "{seed_sql_host_path}:{seed_target}:ro",
             "{image}"
         ],
+
+        "_comment_attach_command": "Komenda wykonywana wewnątrz kontenera podczas podłączania terminala użytkownika (oczekiwanie na start bazy i uruchomienie CLI)",
         "attach_command": [
             "sh",
             "-c",
             "echo 'Czekam na uruchomienie MySQL (Pociągi)...'; i=0; max=30; until mysqladmin ping -h127.0.0.1 -uroot -p{root_password} --silent >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'MySQL nie uruchomił się w czasie' >&2; fi; export MYSQL_PWD={password}; exec mysql -h127.0.0.1 -u{user} {database}"
         ]
     },
-    
+
+    "_comment_description": "Opis obrazu wyświetlany w panelu administracyjnym i klincie dla użytkownika",
     "description": "MySQL - Pociągi Kolekcjonerskie"
 }

@@ -1,6 +1,5 @@
 {
     "session": {
-        "mode": "postgres",
         "base_name": "postgres_lab",
         "image": "postgres:15-alpine",
         "network": "lab-net",

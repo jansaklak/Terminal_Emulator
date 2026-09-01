@@ -1,6 +1,5 @@
 {
     "session": {
-        "mode": "mongodb",
         "base_name": "mongodb_lab",
         "image": "mongo:6.0",
         "network": "lab-net",
@@ -31,9 +30,8 @@
         "attach_command": [
             "sh",
             "-c",
-            "echo 'Czekam na uruchomienie MongoDB...'; i=0; max=60; until mongosh --username {user} --password {password} --authenticationDatabase admin --eval 'db.runCommand({ping:1})' >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'MongoDB nie uruchomił się w czasie' >&2; fi; exec mongosh --username {user} --password {password} --authenticationDatabase admin {database}"
+            "echo 'Czekam na uruchomienie MongoDB...'; i=0; max=240; until mongosh --username {user} --password {password} --authenticationDatabase admin --eval 'db.runCommand({ping:1})' >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'MongoDB nie uruchomił się w czasie' >&2; fi; exec mongosh --username {user} --password {password} --authenticationDatabase admin {database}"
         ]
     },
-    
     "description": "MongoDB - Baza dokumentowa"
 }

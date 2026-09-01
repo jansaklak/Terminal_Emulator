@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administracyjny Terminal Gateway</title>
+    <title>Panel Administracyjny</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root {
@@ -18,7 +18,7 @@
             --danger-hover: #dc2626;
             --success-color: #10b981;
             --warning-color: #f59e0b;
-            --radius: 6px;
+            --radius: 0px;
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
         }
@@ -81,13 +81,13 @@
         .status-dot {
             width: 8px;
             height: 8px;
-            border-radius: 50%;
+            border-radius: 0;
             display: inline-block;
         }
 
         .status-dot.online {
             background-color: var(--success-color);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+            
         }
 
         .status-dot.offline {
@@ -244,7 +244,7 @@
         input:focus,
         select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+            
         }
 
         .form-grid-2 {
@@ -272,7 +272,7 @@
             color: #ffffff;
             background-color: var(--primary-color);
             border: 1px solid transparent;
-            border-radius: var(--radius);
+            border-radius:  0;
             cursor: pointer;
             transition: background-color 0.15s ease;
             white-space: nowrap;
@@ -298,6 +298,24 @@
 
         .btn-danger:hover {
             background-color: var(--danger-hover);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: #ffffff;
+        }
+
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
         }
 
         .btn-sm {
@@ -343,7 +361,7 @@
             font-size: 12px;
             background: #f1f5f9;
             padding: 2px 6px;
-            border-radius: 4px;
+            border-radius: 0;
         }
 
         .group-tag {
@@ -351,9 +369,101 @@
             background: #e2e8f0;
             color: #334155;
             padding: 2px 6px;
-            border-radius: 4px;
+            border-radius: 0;
             font-size: 11px;
             margin-right: 4px;
+        }
+
+        .group-selector-container {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        body.dark-mode .group-selector-container {
+            background: #0f172a;
+        }
+
+        .group-chips-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 130px;
+            overflow-y: auto;
+            min-height: 28px;
+            align-items: center;
+        }
+
+        .group-chip-item {
+            display: inline-flex;
+            align-items: center;
+            background: #e2e8f0;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .group-chip-item .chip-check {
+            display: none;
+            margin-right: 4px;
+            font-weight: bold;
+        }
+
+        .group-chip-item:hover {
+            background: #cbd5e1;
+        }
+
+        .group-chip-item.selected {
+            background: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+
+        .group-chip-item.selected .chip-check {
+            display: inline;
+        }
+
+        body.dark-mode .group-chip-item {
+            background: #334155;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+
+        body.dark-mode .group-chip-item:hover {
+            background: #475569;
+        }
+
+        body.dark-mode .group-chip-item.selected {
+            background: #3b82f6;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        .group-add-inline {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .group-add-inline input {
+            flex: 1;
+            padding: 5px 8px;
+            font-size: 12px;
+        }
+
+        .group-add-inline button {
+            padding: 5px 12px;
+            font-size: 12px;
+            white-space: nowrap;
         }
 
         .actions-cell {
@@ -488,7 +598,7 @@
             color: #1e293b;
             font-size: 10px;
             padding: 1px 6px;
-            border-radius: 10px;
+            border-radius: 0;
             font-weight: 600;
         }
 
@@ -527,7 +637,7 @@
             max-width: 500px;
             padding: 20px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
         }
 
         .modal-header {
@@ -671,12 +781,19 @@
         <!-- HEADER -->
         <header>
             <div class="brand">
-                <h1>Terminal Gateway Admin</h1>
-                <p>Zarządzanie użytkownikami, resetowanie haseł i podgląd logów live</p>
+                <h1>Panel administratora</h1>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()"
-                    title="Przełącz motyw">🌙 Ciemny motyw</button>
+                    title="Przełącz motyw">Ciemny motyw</button>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" class="btn btn-warning btn-sm" id="btnRestartServer"
+                        onclick="confirmRestartServer()" title="Zrestartuj serwer terminali">Restartuj serwer</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="btnStopServer" onclick="confirmStopServer()"
+                        title="Zakończ działanie serwera terminali">Zakończ serwer</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnStartServer" onclick="startServer()"
+                        style="display: none;" title="Uruchom serwer terminali">Uruchom serwer</button>
+                </div>
                 <div class="server-status">
                     <span id="statusDot" class="status-dot online"></span>
                     <span id="statusText">Połączono z serwerem</span>
@@ -715,7 +832,7 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">Baza Użytkowników</h2>
-                    <button class="btn btn-secondary btn-sm" onclick="loadAll()">↻ Odśwież</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadAll()">Odśwież</button>
                 </div>
 
                 <!-- FILTERS -->
@@ -749,10 +866,8 @@
                             zaznaczenie</button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">➕ Dodaj zaznaczonych do
-                            grupy</button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">🗑️ Usuń
-                            zaznaczonych</button>
+                        <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">Dodaj zaznaczonych do grupy</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">Usuń zaznaczonych</button>
                     </div>
                 </div>
 
@@ -803,10 +918,19 @@
                             <input id="newPassword" type="password" placeholder="Automatyczne lub własne">
                         </div>
                         <div class="form-group">
-                            <label for="newGroup">Grupa początkowa (opcjonalnie):</label>
-                            <input id="newGroup" placeholder="np. bazy1">
+                            <label>Grupy (wybierz z listy lub dodaj nową):</label>
+                            <div class="group-selector-container" id="newUserGroupsPicker">
+                                <div style="font-size: 11px; color: var(--muted-color); margin-bottom: 4px;">Kliknij grupy, aby je przypisać:</div>
+                                <div class="group-chips-list" id="newUserGroupsPicker_chips">
+                                    <span style="font-size: 11px; color: var(--muted-color); font-style: italic;" class="no-groups-placeholder">Ładowanie grup...</span>
+                                </div>
+                                <div class="group-add-inline">
+                                    <input id="newUserCustomGroup" placeholder="Nowa grupa..." onkeydown="if(event.key === 'Enter'){event.preventDefault(); addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup');}">
+                                    <button type="button" class="btn btn-secondary" onclick="addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup')">+ Dodaj grupę</button>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" class="btn" style="width: 100%; margin-top: 6px;">+ Utwórz konto</button>
+                        <button type="submit" class="btn" style="width: 100%; margin-top: 6px;">Utwórz konto</button>
                     </form>
                 </div>
 
@@ -825,8 +949,7 @@
                             <label for="csvFile">Plik CSV:</label>
                             <input type="file" id="csvFile" accept=".csv" required>
                         </div>
-                        <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 6px;">📁
-                            Importuj listę z CSV</button>
+                        <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 6px;">Importuj listę z CSV</button>
                     </form>
                 </div>
             </div>
@@ -838,7 +961,8 @@
                 <div class="logs-sidebar">
                     <div class="logs-sidebar-header" style="display: flex; flex-direction: column; gap: 6px;">
                         <span>Pliki Logów</span>
-                        <select id="logUserFilter" onchange="refreshLogsList()" style="font-size: 11px; padding: 4px 6px;">
+                        <select id="logUserFilter" onchange="refreshLogsList()"
+                            style="font-size: 11px; padding: 4px 6px;">
                             <option value="all">Wszyscy użytkownicy</option>
                         </select>
                     </div>
@@ -847,11 +971,13 @@
                     </div>
                 </div>
                 <div class="logs-viewer-box">
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-bottom: 1px solid var(--border-color);" id="logViewerHeaderBox">
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-bottom: 1px solid var(--border-color);"
+                        id="logViewerHeaderBox">
                         <div id="logTabsHeader" class="logs-subtabs" style="border-bottom: none; flex: 1;"></div>
                         <div id="logViewerActions" style="padding: 4px 10px; display: none;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="downloadCurrentCmds()" title="Pobierz surowy plik komend sesji (.cmds)">
-                                📥 Pobierz plik cmds
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="downloadCurrentCmds()"
+                                title="Pobierz surowy plik komend sesji (.cmds)">
+                                Pobierz plik cmds
                             </button>
                         </div>
                     </div>
@@ -867,7 +993,7 @@
         <div class="modal-box">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">Informacja</h3>
-                <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+                <button class="btn btn-secondary btn-sm" onclick="closeModal()">X</button>
             </div>
             <div id="modalBody"></div>
             <div style="margin-top: 16px; text-align: right;">
@@ -899,7 +1025,7 @@
             container.innerHTML = `
                 <div class="alert ${alertClass}">
                     <div>${message}</div>
-                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">✕</button>
+                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.remove()">X</button>
                 </div>
             `;
         }
@@ -933,6 +1059,82 @@
             document.getElementById('metricGroups').textContent = groups.size;
         }
 
+        async function checkServerStatus() {
+            try {
+                const res = await fetch('/api/server/status').then(r => r.json());
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                const btnStart = document.getElementById('btnStartServer');
+                const btnStop = document.getElementById('btnStopServer');
+
+                if (res.ok && res.running) {
+                    statusDot.className = "status-dot online";
+                    statusText.textContent = "Serwer aktywny";
+                    if (btnStart) btnStart.style.display = "none";
+                    if (btnStop) btnStop.style.display = "inline-flex";
+                } else {
+                    statusDot.className = "status-dot offline";
+                    statusText.textContent = "Serwer zatrzymany";
+                    if (btnStart) btnStart.style.display = "inline-flex";
+                    if (btnStop) btnStop.style.display = "none";
+                }
+            } catch (e) {
+                document.getElementById('statusDot').className = "status-dot offline";
+                document.getElementById('statusText').textContent = "Błąd statusu serwera";
+            }
+        }
+
+        async function confirmStopServer() {
+            if (!confirm("Czy na pewno chcesz ZAKOŃCZYĆ działanie serwera terminali?\nUżytkownicy aktywnie połączeni zostaną rozłączeni.")) {
+                return;
+            }
+            showNotification("Zatrzymywanie serwera...", "warning");
+            try {
+                const res = await fetch('/api/server/stop', { method: 'POST' }).then(r => r.json());
+                if (res.ok) {
+                    showNotification(res.message || "Serwer został zatrzymany.", "success");
+                } else {
+                    showNotification(res.error || res.message || "Wystąpił błąd podczas zatrzymywania serwera.", "danger");
+                }
+            } catch (e) {
+                showNotification("Błąd połączenia podczas zatrzymywania serwera.", "danger");
+            }
+            checkServerStatus();
+        }
+
+        async function confirmRestartServer() {
+            if (!confirm("Czy na pewno chcesz ZRESTARTOWAĆ serwer terminali?")) {
+                return;
+            }
+            showNotification("Restartowanie serwera...", "warning");
+            try {
+                const res = await fetch('/api/server/restart', { method: 'POST' }).then(r => r.json());
+                if (res.ok) {
+                    showNotification(res.message || "Serwer został zrestartowany.", "success");
+                } else {
+                    showNotification(res.error || res.message || "Wystąpił błąd podczas restartowania serwera.", "danger");
+                }
+            } catch (e) {
+                showNotification("Błąd połączenia podczas restartowania serwera.", "danger");
+            }
+            setTimeout(checkServerStatus, 2500);
+        }
+
+        async function startServer() {
+            showNotification("Uruchamianie serwera...", "info");
+            try {
+                const res = await fetch('/api/server/start', { method: 'POST' }).then(r => r.json());
+                if (res.ok) {
+                    showNotification(res.message || "Serwer został uruchomiony.", "success");
+                } else {
+                    showNotification(res.error || res.message || "Wystąpił błąd podczas uruchamiania serwera.", "danger");
+                }
+            } catch (e) {
+                showNotification("Błąd połączenia podczas uruchamiania serwera.", "danger");
+            }
+            setTimeout(checkServerStatus, 2500);
+        }
+
         async function loadAll() {
             try {
                 const [usersRes, onlineRes] = await Promise.all([
@@ -947,8 +1149,7 @@
                 updateMetrics();
                 renderUsers();
 
-                document.getElementById('statusDot').className = "status-dot online";
-                document.getElementById('statusText').textContent = "Połączono z serwerem";
+                await checkServerStatus();
 
                 if (activeMainTab === 'logs') {
                     refreshLogsList();
@@ -972,23 +1173,92 @@
             }
         }
 
-        function updateGroups() {
+        function getKnownGroups() {
             const groups = new Set();
-            getAllUsers().forEach(user => (user.groups || []).forEach(group => groups.add(group)));
-            const sortedGroups = Array.from(groups).sort();
+            getAllUsers().forEach(user => (user.groups || []).forEach(group => {
+                if (group && String(group).trim()) groups.add(String(group).trim());
+            }));
+            return Array.from(groups).sort();
+        }
+
+        function getSelectedGroups(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+            const selectedChips = container.querySelectorAll('.group-chip-item.selected');
+            const groups = [];
+            selectedChips.forEach(chip => {
+                const val = chip.getAttribute('data-group');
+                if (val && !groups.includes(val)) {
+                    groups.push(val);
+                }
+            });
+            return groups;
+        }
+
+        function addCustomGroupChip(containerId, inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const val = input.value.trim();
+            if (!val) return;
+            const chipsList = document.getElementById(containerId + '_chips');
+            if (!chipsList) return;
+
+            const placeholder = chipsList.querySelector('.no-groups-placeholder');
+            if (placeholder) placeholder.remove();
+
+            let existingChip = Array.from(chipsList.querySelectorAll('.group-chip-item')).find(c => c.getAttribute('data-group') === val);
+            if (existingChip) {
+                existingChip.classList.add('selected');
+                existingChip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                const newChip = document.createElement('span');
+                newChip.className = 'group-chip-item selected';
+                newChip.setAttribute('data-group', val);
+                newChip.onclick = function() { this.classList.toggle('selected'); };
+                newChip.innerHTML = `<span class="chip-check">✓ </span>${escapeHtml(val)}`;
+                chipsList.appendChild(newChip);
+            }
+            input.value = '';
+        }
+
+        function renderNewUserGroupChips() {
+            const chipsList = document.getElementById('newUserGroupsPicker_chips');
+            if (!chipsList) return;
+
+            const currentlySelected = getSelectedGroups('newUserGroupsPicker');
+            const allKnown = getKnownGroups();
+            const combined = Array.from(new Set([...allKnown, ...currentlySelected])).sort();
+
+            if (combined.length === 0) {
+                chipsList.innerHTML = '<span style="font-size: 11px; color: var(--muted-color); font-style: italic;" class="no-groups-placeholder">Brak zdefiniowanych grup. Wpisz nazwę poniżej, aby utworzyć pierwszą.</span>';
+                return;
+            }
+
+            chipsList.innerHTML = combined.map(g => {
+                const isSel = currentlySelected.includes(g);
+                return `<span class="group-chip-item ${isSel ? 'selected' : ''}" data-group="${escapeHtml(g)}" onclick="this.classList.toggle('selected')"><span class="chip-check">✓ </span>${escapeHtml(g)}</span>`;
+            }).join('');
+        }
+
+        function updateGroups() {
+            const sortedGroups = getKnownGroups();
 
             const select = document.getElementById('groupFilter');
-            const current = select.value;
-            select.innerHTML = '<option value="all">Wszystkie grupy</option>';
-            sortedGroups.forEach(g => {
-                select.innerHTML += `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`;
-            });
-            select.value = Array.from(select.options).some(o => o.value === current) ? current : 'all';
+            if (select) {
+                const current = select.value;
+                select.innerHTML = '<option value="all">Wszystkie grupy</option>';
+                sortedGroups.forEach(g => {
+                    select.innerHTML += `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`;
+                });
+                select.value = Array.from(select.options).some(o => o.value === current) ? current : 'all';
+            }
 
             const datalist = document.getElementById('existingGroupsList');
             if (datalist) {
                 datalist.innerHTML = sortedGroups.map(g => `<option value="${escapeHtml(g)}">`).join('');
             }
+
+            renderNewUserGroupChips();
         }
 
         function updateLogUserFilterOptions() {
@@ -1051,13 +1321,13 @@
                         <td>${escapeHtml(user.display_name || user.username)}</td>
                         <td>
                             <span class="user-pass-code" id="pass_${escapeHtml(user.username)}" data-pass="${escapeHtml(user.password || '')}" data-hidden="true">••••••••</span>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick='togglePassView(${userJson})' title="Pokaż / Ukryj hasło">👁️</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='togglePassView(${userJson})' title="Pokaż / Ukryj hasło">Pokaż / Ukryj</button>
                         </td>
                         <td>${groupsHtml}</td>
                         <td class="actions-cell">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick='goToUserLogs(${userJson})' title="Zobacz logi użytkownika">📄 Logi</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick='resetPassword(${userJson})' title="Resetuj hasło użytkownika">🔑 Resetuj hasło</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick='editUserModal(${userJson})' title="Edytuj dane">✏️ Edytuj</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='goToUserLogs(${userJson})' title="Zobacz logi użytkownika">Logi</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='resetPassword(${userJson})' title="Resetuj hasło użytkownika">Resetuj hasło</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick='editUserModal(${userJson})' title="Edytuj dane">Edytuj</button>
                             <button type="button" class="btn btn-danger btn-sm" onclick='delUser(${userJson})' title="Usuń konto">Usuń</button>
                         </td>
                     </tr>
@@ -1190,7 +1460,7 @@
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 const btn = document.getElementById('themeToggleBtn');
-                if (btn) btn.textContent = '☀️ Jasny motyw';
+                if (btn) btn.textContent = 'Jasny motyw';
             }
         }
 
@@ -1198,7 +1468,7 @@
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('admin_theme', isDark ? 'dark' : 'light');
             const btn = document.getElementById('themeToggleBtn');
-            if (btn) btn.textContent = isDark ? '☀️ Jasny motyw' : '🌙 Ciemny motyw';
+            if (btn) btn.textContent = isDark ? 'Jasny motyw' : 'Ciemny motyw';
         }
 
         initTheme();
@@ -1221,7 +1491,12 @@
             const username = document.getElementById('newUsername').value.trim();
             const password = document.getElementById('newPassword').value.trim();
             const display_name = document.getElementById('newDisplayName').value.trim();
-            const group = document.getElementById('newGroup').value.trim();
+
+            const leftoverInput = document.getElementById('newUserCustomGroup');
+            if (leftoverInput && leftoverInput.value.trim()) {
+                addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup');
+            }
+            const groups = getSelectedGroups('newUserGroupsPicker');
 
             if (!username) {
                 alert('Podaj login użytkownika');
@@ -1231,7 +1506,7 @@
             const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, display_name, group })
+                body: JSON.stringify({ username, password, display_name, groups })
             });
 
             const data = await response.json();
@@ -1249,7 +1524,13 @@
             document.getElementById('newUsername').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('newDisplayName').value = '';
-            document.getElementById('newGroup').value = '';
+            if (leftoverInput) leftoverInput.value = '';
+
+            const picker = document.getElementById('newUserGroupsPicker');
+            if (picker) {
+                picker.querySelectorAll('.group-chip-item.selected').forEach(el => el.classList.remove('selected'));
+            }
+
             await loadAll();
         }
 
@@ -1269,7 +1550,7 @@
 
             showModal('Reset Hasła Zakończony', `
                 <p style="margin-bottom: 12px;">Nowe wygenerowane hasło dla użytkownika <strong>${escapeHtml(username)}</strong>:</p>
-                <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 16px; font-weight: bold; text-align: center; color: var(--primary-color);">
+                <div style="background: #f1f5f9; padding: 12px; border-radius: 0; font-family: monospace; font-size: 16px; font-weight: bold; text-align: center; color: var(--primary-color);">
                     ${escapeHtml(data.password)}
                 </div>
             `);
@@ -1279,6 +1560,16 @@
         function editUserModal(username) {
             const user = (cachedUsers || {})[username];
             if (!user) return;
+
+            const allKnown = getKnownGroups();
+            const userGroups = user.groups || [];
+            const combinedGroups = Array.from(new Set([...allKnown, ...userGroups])).sort();
+
+            const chipsHTML = combinedGroups.map(g => {
+                const isSelected = userGroups.includes(g);
+                return `<span class="group-chip-item ${isSelected ? 'selected' : ''}" data-group="${escapeHtml(g)}" onclick="this.classList.toggle('selected')"><span class="chip-check">✓ </span>${escapeHtml(g)}</span>`;
+            }).join('');
+
             showModal(`Edycja użytkownika: ${escapeHtml(user.username)}`, `
                 <form onsubmit="event.preventDefault(); saveUserEdit(${JSON.stringify(user.username)});">
                     <div class="form-group">
@@ -1286,21 +1577,36 @@
                         <input id="editDisplayName" value="${escapeHtml(user.display_name || user.username)}">
                     </div>
                     <div class="form-group">
-                        <label>Grupy (oddziel przecinkami):</label>
-                        <input id="editGroups" value="${escapeHtml((user.groups || []).join(', '))}">
+                        <label>Grupy użytkownika:</label>
+                        <div class="group-selector-container" id="editUserGroupsPicker">
+                            <div style="font-size: 11px; color: var(--muted-color); margin-bottom: 4px;">Kliknij, aby przypisać lub odpiąć grupy:</div>
+                            <div class="group-chips-list" id="editUserGroupsPicker_chips">
+                                ${chipsHTML || '<span style="font-size: 11px; color: var(--muted-color); font-style: italic;" class="no-groups-placeholder">Brak grup w systemie. Wpisz nazwę poniżej, aby utworzyć pierwszą.</span>'}
+                            </div>
+                            <div class="group-add-inline">
+                                <input id="editUserCustomGroup" placeholder="Wpisz nową grupę..." onkeydown="if(event.key === 'Enter'){event.preventDefault(); addCustomGroupChip('editUserGroupsPicker', 'editUserCustomGroup');}">
+                                <button type="button" class="btn btn-secondary" onclick="addCustomGroupChip('editUserGroupsPicker', 'editUserCustomGroup')">+ Dodaj</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Zmień hasło (opcjonalnie):</label>
                         <input id="editPassword" type="password" placeholder="Wpisz nowe hasło lub zostaw puste">
                     </div>
-                    <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Zapisz zmiany</button>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 14px;">Zapisz zmiany</button>
                 </form>
             `);
         }
 
         async function saveUserEdit(username) {
             const display_name = document.getElementById('editDisplayName').value;
-            const groups = document.getElementById('editGroups').value;
+
+            const leftoverInput = document.getElementById('editUserCustomGroup');
+            if (leftoverInput && leftoverInput.value.trim()) {
+                addCustomGroupChip('editUserGroupsPicker', 'editUserCustomGroup');
+            }
+
+            const groups = getSelectedGroups('editUserGroupsPicker');
             const password = document.getElementById('editPassword').value;
 
             const payload = { display_name, groups };
@@ -1358,7 +1664,7 @@
 
             showModal(`Import zakończony (${data.imported_count} użytkowników)`, `
                 <p style="margin-bottom: 10px; color: var(--muted-color);">Oto wygenerowane dane logowania dla zaimportowanych kont:</p>
-                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0;">
                     <table>
                         <thead>
                             <tr><th>Login</th><th>Nazwa</th><th>Wygenerowane Hasło</th></tr>
@@ -1484,7 +1790,7 @@
                     html += `
                         <div class="log-date-group">
                             <div class="log-date-header" onclick="toggleDateGroup(${JSON.stringify(dateKey)})">
-                                <span>📅 ${escapeHtml(dateLabel)}</span>
+                                <span>${escapeHtml(dateLabel)}</span>
                                 <span class="log-count-badge">${items.length}</span>
                             </div>
                             <div id="group_items_${escapeHtml(dateKey)}" class="log-date-items ${isCollapsed ? 'collapsed' : ''}">
@@ -1493,7 +1799,7 @@
                         const timeLabel = file.time ? `<span style="font-size:10px; color:var(--muted-color); margin-left: 6px; flex-shrink:0;">${escapeHtml(file.time)}</span>` : '';
                         return `
                                         <div class="log-item ${activeLogFile === fn ? 'active' : ''}" onclick='openLog(${JSON.stringify(fn)})' title="${escapeHtml(fn)}" style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span style="overflow:hidden; text-overflow:ellipsis;">📄 ${escapeHtml(fn.split('/').pop())}</span>
+                                            <span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(fn.split('/').pop())}</span>
                                             ${timeLabel}
                                         </div>
                                     `;
@@ -1536,7 +1842,7 @@
             header.innerHTML = Object.keys(openLogs).map(f => `
                 <div class="log-subtab ${activeLogFile === f ? 'active' : ''}" onclick='setActiveLog(${JSON.stringify(f)})'>
                     <span>${escapeHtml(f.split('/').pop().split('_').slice(0, 2).join('_') || f)}</span>
-                    <span onclick='closeLog(${JSON.stringify(f)}, event)' style="cursor:pointer; font-weight:bold;">×</span>
+                    <span onclick='closeLog(${JSON.stringify(f)}, event)' style="cursor:pointer; font-weight:bold;">X</span>
                 </div>
             `).join('');
             updateLogActionsVisibility();

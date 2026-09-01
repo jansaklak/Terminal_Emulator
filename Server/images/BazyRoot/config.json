@@ -1,6 +1,5 @@
 {
     "session": {
-        "mode": "mysql",
         "base_name": "mysql_lab_root",
         "image": "mysql:8.0",
         "network": "lab-net",

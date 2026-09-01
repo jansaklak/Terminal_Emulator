@@ -1,6 +1,5 @@
 {
     "session": {
-        "mode": "container",
         "base_name": "ubuntu_shell",
         "image": "ubuntu:22.04",
         "seed_dir": "shared",

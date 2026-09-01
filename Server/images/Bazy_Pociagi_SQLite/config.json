@@ -1,6 +1,5 @@
 {
     "session": {
-        "mode": "sqlite",
         "base_name": "sqlite_pociagi",
         "image": "nouchka/sqlite3:latest",
         "network": "lab-net",

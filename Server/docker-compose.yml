@@ -6,6 +6,7 @@ services:
     restart: always
     environment:
       PROJECT_PATH: ${PROJECT_PATH:-/app}
+      TZ: Europe/Warsaw
     ports:
       - "51234:51234"
     volumes:
@@ -19,9 +20,12 @@ services:
     build: .
     container_name: admin_panel
     command: python3 admin_panel.py
+    environment:
+      TZ: Europe/Warsaw
     ports:
       - "5001:5001"
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - .:/app
       - ./logs:/var/log/terminal-server
     networks:

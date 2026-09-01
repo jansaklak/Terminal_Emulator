@@ -1,4 +1,22 @@
-# Build output & dependencies
+# ==========================================
+# Dokumentacja i pliki pracy magisterskiej
+# ==========================================
+Dokumentacja/
+praca.md
+praca.md.*
+*.docx
+*.docx.bak
+~$*.docx
+PracaMagisterska*
+INSTRUKCJA_URUCHOMIENIA.md
+export_to_word.sh
+toRepo.sh
+Repo_TerminalEmulator/
+.github/
+
+# ==========================================
+# Java / Maven build & test artifacts
+# ==========================================
 target/
 **/target/
 build/
@@ -7,15 +25,15 @@ dist/
 nbdist/
 .m2/
 **/.m2/
-Repo_TerminalEmulator/
-*.zip
-toRepo.sh
-
-# Class files & Java packaging
 *.class
+*.jar
+!Client/dist/.gitkeep
+*.zip
 TestBase64*
 
-# Python cache & runtime
+# ==========================================
+# Python cache & runtime files
+# ==========================================
 __pycache__/
 **/__pycache__/
 *.pyc
@@ -23,13 +41,18 @@ __pycache__/
 *.pyd
 .pytest_cache/
 
-# Thesis / Document files
-*.docx
-*.docx.bak
-~$*.docx
-PracaMagisterska*
+# ==========================================
+# Runtime Server state & session dumps
+# ==========================================
+Server/logs/*
+!Server/logs/.gitkeep
+Server/online.json
+Server/commands/*/*.cmds
+!Server/commands/**/.gitkeep
 
-# IDE & Editor files
+# ==========================================
+# IDE & System files
+# ==========================================
 .idea/
 *.iml
 *.iws
@@ -38,12 +61,5 @@ PracaMagisterska*
 .classpath
 .project
 .settings/
-
-# macOS / OS files
 .DS_Store
 **/.DS_Store
-
-# Server runtime files
-Server/logs/*
-!Server/logs/.gitkeep
-Server/online.json

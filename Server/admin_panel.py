@@ -2,9 +2,17 @@ import csv
 import datetime
 import json
 import os
+import socket
+import subprocess
+import sys
+import time
 import unicodedata
 from io import StringIO
 from pathlib import Path
+
+os.environ['TZ'] = 'Europe/Warsaw'
+if hasattr(time, 'tzset'):
+    time.tzset()
 
 from flask import Flask, jsonify, render_template, request, send_file
 
@@ -39,11 +47,20 @@ def remove_diacritics(text):
     return ''.join(char for char in nfkd_form if not unicodedata.combining(char))
 
 
+def apply_timezone(tz_name):
+    if tz_name:
+        os.environ['TZ'] = tz_name
+        if hasattr(time, 'tzset'):
+            time.tzset()
+
+
 def load_config():
-    cfg = {'HOST': '0.0.0.0', 'PORT': 51234, 'CONFIGS': {}}
+    cfg = {'HOST': '0.0.0.0', 'PORT': 51234, 'TIMEZONE': 'Europe/Warsaw', 'CONFIGS': {}}
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as file_handle:
             cfg.update(json.load(file_handle))
+
+    apply_timezone(cfg.get('TIMEZONE'))
 
     if os.path.exists(IMAGES_DIR):
         for entry in os.scandir(IMAGES_DIR):
@@ -135,10 +152,15 @@ def add_user():
     if username in users:
         return jsonify({'ok': False, 'error': 'Użytkownik już istnieje'}), 400
 
-    if not password:
-        password = os.urandom(4).hex()
-
-    groups = [group] if group else []
+    raw_groups = data.get('groups')
+    if raw_groups is not None:
+        if isinstance(raw_groups, list):
+            groups = [str(g).strip() for g in raw_groups if str(g).strip()]
+        else:
+            groups = [g.strip() for g in str(raw_groups).split(',') if g.strip()]
+    else:
+        group = (data.get('group') or '').strip()
+        groups = [group] if group else []
 
     users[username] = {
         'username': username,
@@ -390,5 +412,130 @@ def import_users_csv():
     })
 
 
+def is_gateway_server_running():
+    cfg = load_config()
+    port = cfg.get('PORT', 51234)
+    for host in ['127.0.0.1', 'localhost', 'python_gateway', 'terminal-server']:
+        try:
+            with socket.create_connection((host, port), timeout=0.5):
+                return True
+        except Exception:
+            pass
+
+    try:
+        res = subprocess.run(['docker', 'inspect', '-f', '{{.State.Running}}', 'python_gateway'],
+                             capture_output=True, text=True)
+        if res.returncode == 0 and res.stdout.strip() == 'true':
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
+def stop_gateway_server():
+    errors = []
+    try:
+        res = subprocess.run(['docker', 'stop', 'python_gateway'], capture_output=True, text=True)
+        if res.returncode == 0:
+            return True, "Serwer (kontener python_gateway) został pomyślnie zatrzymany."
+        else:
+            errors.append(res.stderr.strip())
+    except Exception as e:
+        errors.append(str(e))
+
+    try:
+        res = subprocess.run(['pkill', '-f', 'server.py'], capture_output=True, text=True)
+        if res.returncode == 0:
+            return True, "Serwer (proces server.py) został pomyślnie zatrzymany."
+    except Exception as e:
+        errors.append(str(e))
+
+    return False, f"Nie udało się zatrzymać serwera: {'; '.join(filter(None, errors))}"
+
+
+def start_gateway_server():
+    errors = []
+    try:
+        res = subprocess.run(['docker', 'start', 'python_gateway'], capture_output=True, text=True)
+        if res.returncode == 0:
+            return True, "Serwer (kontener python_gateway) został pomyślnie uruchomiony."
+        else:
+            errors.append(res.stderr.strip())
+    except Exception as e:
+        errors.append(str(e))
+
+    for d_cmd in [['docker', 'compose'], ['docker-compose']]:
+        try:
+            res = subprocess.run(d_cmd + ['up', '-d', 'terminal-server'], capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Serwer (usługa terminal-server) został uruchomiony."
+        except Exception:
+            pass
+
+    try:
+        server_script = Path(__file__).parent / 'server.py'
+        if server_script.exists():
+            subprocess.Popen([sys.executable, str(server_script.resolve())], cwd=str(server_script.parent.resolve()))
+            return True, "Serwer (proces server.py) został uruchomiony w tle."
+    except Exception as e:
+        errors.append(str(e))
+
+    return False, f"Nie udało się uruchomić serwera: {'; '.join(filter(None, errors))}"
+
+
+def restart_gateway_server():
+    errors = []
+    try:
+        res = subprocess.run(['docker', 'restart', 'python_gateway'], capture_output=True, text=True)
+        if res.returncode == 0:
+            return True, "Serwer (kontener python_gateway) został pomyślnie zrestartowany."
+        else:
+            errors.append(res.stderr.strip())
+    except Exception as e:
+        errors.append(str(e))
+
+    stop_gateway_server()
+    start_ok, start_msg = start_gateway_server()
+    if start_ok:
+        return True, f"Serwer został zrestartowany. ({start_msg})"
+
+    return False, f"Błąd podczas restartowania serwera: {'; '.join(filter(None, errors))}"
+
+
+@app.route('/api/server/status')
+def get_server_status():
+    running = is_gateway_server_running()
+    return jsonify({'ok': True, 'running': running})
+
+
+@app.route('/api/server/stop', methods=['POST'])
+def stop_server_route():
+    try:
+        success, msg = stop_gateway_server()
+        return jsonify({'ok': success, 'message': msg})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/server/restart', methods=['POST'])
+def restart_server_route():
+    try:
+        success, msg = restart_gateway_server()
+        return jsonify({'ok': success, 'message': msg})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/server/start', methods=['POST'])
+def start_server_route():
+    try:
+        success, msg = start_gateway_server()
+        return jsonify({'ok': success, 'message': msg})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
+
