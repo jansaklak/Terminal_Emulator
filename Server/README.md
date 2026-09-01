@@ -4,7 +4,7 @@ Serwer pośredniczący odpowiedzialny za autoryzację studentów, zarządzanie p
 
 ## Wymagania
 
-- System operacyjny Linux lub macOS z zainstalowanym środowiskiem Docker i Docker Compose.
+- System operacyjny Windows, Linux lub macOS z zainstalowanym środowiskiem Docker i Docker Compose.
 - Python 3.10+ (w przypadku uruchamiania poza kontenerem).
 
 ## Uruchomienie
