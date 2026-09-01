@@ -9,6 +9,12 @@
         "run_command": [
             "run",
             "-d",
+            "--pids-limit",
+            "100",
+            "--memory",
+            "512m",
+            "--memory-swap",
+            "512m",
             "--name",
             "{container_name}",
             "--hostname",
@@ -23,6 +29,5 @@
             "/bin/bash"
         ]
     },
-    
     "description": "Powłoka bash (Ubuntu)"
 }

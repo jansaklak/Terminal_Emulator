@@ -10,6 +10,12 @@
         "run_command": [
             "run",
             "-d",
+            "--pids-limit",
+            "100",
+            "--memory",
+            "512m",
+            "--memory-swap",
+            "512m",
             "--name",
             "{container_name}",
             "--network",
@@ -32,6 +38,5 @@
             "echo 'Czekam na uruchomienie SQLite (Pociągi)...'; until [ -f /data/pociagi.db ]; do sleep 1; done; sqlite3 /data/pociagi.db"
         ]
     },
-    
     "description": "SQLite - Pociągi Kolekcjonerskie"
 }

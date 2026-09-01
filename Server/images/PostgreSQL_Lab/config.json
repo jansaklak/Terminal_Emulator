@@ -12,6 +12,12 @@
         "run_command": [
             "run",
             "-d",
+            "--pids-limit",
+            "100",
+            "--memory",
+            "512m",
+            "--memory-swap",
+            "512m",
             "--name",
             "{container_name}",
             "--network",
@@ -34,6 +40,5 @@
             "echo 'Czekam na uruchomienie PostgreSQL...'; i=0; max=30; until pg_isready -h 127.0.0.1 -U {user} -d {database} >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'PostgreSQL nie uruchomił się w czasie' >&2; fi; PGPASSWORD={password} exec psql -h 127.0.0.1 -U {user} -d {database}"
         ]
     },
-    
     "description": "PostgreSQL - Laboratorium"
 }

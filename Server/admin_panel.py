@@ -14,15 +14,62 @@ os.environ['TZ'] = 'Europe/Warsaw'
 if hasattr(time, 'tzset'):
     time.tzset()
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file, session, redirect
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('ADMIN_SECRET_KEY', 'terminal_emulator_admin_secret_key_2026')
 
 CONFIG_FILE = 'server_config.json'
 IMAGES_DIR = 'images'
 USERS_FILE = 'users.json'
 COMMANDS_DIR = Path('commands').resolve()
 LOGS_ROOT = Path('/var/log/terminal-server')
+
+PUBLIC_ENDPOINTS = {'login_page', 'api_login', 'static'}
+
+
+def get_admin_credentials():
+    cfg = load_config()
+    user = os.environ.get('ADMIN_USER') or cfg.get('ADMIN_USER', 'admin')
+    pwd = os.environ.get('ADMIN_PASSWORD') or cfg.get('ADMIN_PASSWORD', 'admin_password')
+    return user, pwd
+
+
+@app.before_request
+def check_authentication():
+    if request.endpoint in PUBLIC_ENDPOINTS:
+        return None
+    if not session.get('logged_in'):
+        if request.path.startswith('/api/'):
+            return jsonify({'ok': False, 'error': 'Wymagana autoryzacja'}), 401
+        return redirect('/login')
+
+
+@app.route('/login')
+def login_page():
+    if session.get('logged_in'):
+        return redirect('/')
+    return render_template('login.html')
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json or {}
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '').strip()
+
+    admin_user, admin_pass = get_admin_credentials()
+    if username == admin_user and password == admin_pass:
+        session['logged_in'] = True
+        session['admin_user'] = username
+        return jsonify({'ok': True, 'username': username})
+    return jsonify({'ok': False, 'error': 'Nieprawidłowy login lub hasło'}), 401
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'ok': True})
 
 
 def get_log_dir():

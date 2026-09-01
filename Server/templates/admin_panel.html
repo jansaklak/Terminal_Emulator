@@ -786,6 +786,7 @@
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()"
                     title="Przełącz motyw">Ciemny motyw</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="logoutAdmin()" title="Wyloguj z panelu">Wyloguj</button>
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <button type="button" class="btn btn-warning btn-sm" id="btnRestartServer"
                         onclick="confirmRestartServer()" title="Zrestartuj serwer terminali">Restartuj serwer</button>
@@ -1901,6 +1902,13 @@
             } catch (e) {
                 console.error("Błąd pobierania logu", e);
             }
+        }
+
+        async function logoutAdmin() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (e) {}
+            window.location.href = '/login';
         }
 
         // Polling
