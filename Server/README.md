@@ -9,7 +9,7 @@ Serwer pośredniczący odpowiedzialny za autoryzację studentów, zarządzanie p
 
 ## Uruchomienie
 
-### 1. Uruchomienie za pomocą Docker Compose (zalecane)
+### 1.
 
 W katalogu `Server/`:
 
