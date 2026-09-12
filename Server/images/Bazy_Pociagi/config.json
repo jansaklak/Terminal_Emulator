@@ -55,5 +55,7 @@
         ]
     },
     "_comment_description": "Opis obrazu wyświetlany w panelu administracyjnym i kliencie dla użytkownika",
-    "description": "MySQL - Pociągi Kolekcjonerskie"
+    "description": "MySQL - Pociągi Kolekcjonerskie",
+    "access_all": true,
+    "allowed_groups": []
 }

@@ -5,8 +5,9 @@ services:
     container_name: python_gateway
     restart: always
     environment:
-      PROJECT_PATH: ${PROJECT_PATH:-/app}
+      PROJECT_PATH: ${PROJECT_PATH:-}
       TZ: Europe/Warsaw
+    stop_grace_period: 15s
     ports:
       - "51234:51234"
     volumes:
@@ -19,7 +20,7 @@ services:
   admin-panel:
     build: .
     container_name: admin_panel
-    command: python3 admin_panel.py
+    command: python3 web_panel/admin_panel.py
     environment:
       TZ: Europe/Warsaw
     ports:

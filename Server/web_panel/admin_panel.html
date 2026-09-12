@@ -5,6 +5,14 @@
     <meta charset="UTF-8">
     <title>Panel Administracyjny</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('admin_theme');
+            if (saved === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -87,7 +95,7 @@
 
         .status-dot.online {
             background-color: var(--success-color);
-            
+
         }
 
         .status-dot.offline {
@@ -111,7 +119,6 @@
             border: none;
             border-bottom: 2px solid transparent;
             cursor: pointer;
-            transition: all 0.15s ease;
         }
 
         .nav-tab:hover {
@@ -238,13 +245,12 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             outline: none;
-            transition: border-color 0.15s ease;
         }
 
         input:focus,
         select:focus {
             border-color: var(--primary-color);
-            
+
         }
 
         .form-grid-2 {
@@ -272,9 +278,8 @@
             color: #ffffff;
             background-color: var(--primary-color);
             border: 1px solid transparent;
-            border-radius:  0;
+            border-radius: 0;
             cursor: pointer;
-            transition: background-color 0.15s ease;
             white-space: nowrap;
         }
 
@@ -409,7 +414,6 @@
             font-weight: 500;
             cursor: pointer;
             user-select: none;
-            transition: all 0.15s ease;
         }
 
         .group-chip-item .chip-check {
@@ -637,7 +641,57 @@
             max-width: 500px;
             padding: 20px;
             border: 1px solid var(--border-color);
+        }
+
+        .modal-box.modal-lg {
+            max-width: 860px;
+        }
+
+        .badge-public {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-hidden {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 8px 10px;
             border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .matrix-table th:first-child,
+        .matrix-table td:first-child {
+            text-align: left;
+        }
+
+        .matrix-table th {
+            background-color: #f1f5f9;
+            font-weight: 600;
         }
 
         .modal-header {
@@ -652,6 +706,7 @@
             font-weight: 600;
         }
 
+        html.dark-mode body,
         body.dark-mode {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
@@ -753,6 +808,32 @@
             border-color: #334155;
         }
 
+        body.dark-mode .badge-public {
+            background: #064e3b;
+            color: #a7f3d0;
+            border-color: #047857;
+        }
+
+        body.dark-mode .badge-hidden {
+            background: #7f1d1d;
+            color: #fecaca;
+            border-color: #991b1b;
+        }
+
+        body.dark-mode .matrix-table th,
+        body.dark-mode .matrix-table td {
+            border-color: #334155;
+        }
+
+        body.dark-mode .matrix-table th {
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .matrix-table tr:hover {
+            background-color: #1e293b;
+        }
+
         body.dark-mode #bulkActionsBar {
             background: #334155 !important;
             border-color: #475569 !important;
@@ -786,7 +867,8 @@
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()"
                     title="Przełącz motyw">Ciemny motyw</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="logoutAdmin()" title="Wyloguj z panelu">Wyloguj</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="logoutAdmin()"
+                    title="Wyloguj z panelu">Wyloguj</button>
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <button type="button" class="btn btn-warning btn-sm" id="btnRestartServer"
                         onclick="confirmRestartServer()" title="Zrestartuj serwer terminali">Restartuj serwer</button>
@@ -804,8 +886,9 @@
 
         <!-- NAVIGATION TABS -->
         <nav class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('users', this)">Użytkownicy</button>
-            <button class="nav-tab" onclick="switchTab('logs', this)">Logi serwera</button>
+            <button class="nav-tab active" id="tabBtnUsers" onclick="switchTab('users', this)">Użytkownicy</button>
+            <button class="nav-tab" id="tabBtnImages" onclick="switchTab('images', this)">Środowiska</button>
+            <button class="nav-tab" id="tabBtnLogs" onclick="switchTab('logs', this)">Logi</button>
         </nav>
 
         <!-- NOTIFICATION BANNER -->
@@ -867,8 +950,10 @@
                             zaznaczenie</button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">Dodaj zaznaczonych do grupy</button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">Usuń zaznaczonych</button>
+                        <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">Dodaj zaznaczonych do
+                            grupy</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">Usuń
+                            zaznaczonych</button>
                     </div>
                 </div>
 
@@ -921,13 +1006,18 @@
                         <div class="form-group">
                             <label>Grupy (wybierz z listy lub dodaj nową):</label>
                             <div class="group-selector-container" id="newUserGroupsPicker">
-                                <div style="font-size: 11px; color: var(--muted-color); margin-bottom: 4px;">Kliknij grupy, aby je przypisać:</div>
+                                <div style="font-size: 11px; color: var(--muted-color); margin-bottom: 4px;">Kliknij
+                                    grupy, aby je przypisać:</div>
                                 <div class="group-chips-list" id="newUserGroupsPicker_chips">
-                                    <span style="font-size: 11px; color: var(--muted-color); font-style: italic;" class="no-groups-placeholder">Ładowanie grup...</span>
+                                    <span style="font-size: 11px; color: var(--muted-color); font-style: italic;"
+                                        class="no-groups-placeholder">Ładowanie grup...</span>
                                 </div>
                                 <div class="group-add-inline">
-                                    <input id="newUserCustomGroup" placeholder="Nowa grupa..." onkeydown="if(event.key === 'Enter'){event.preventDefault(); addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup');}">
-                                    <button type="button" class="btn btn-secondary" onclick="addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup')">+ Dodaj grupę</button>
+                                    <input id="newUserCustomGroup" placeholder="Nowa grupa..."
+                                        onkeydown="if(event.key === 'Enter'){event.preventDefault(); addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup');}">
+                                    <button type="button" class="btn btn-secondary"
+                                        onclick="addCustomGroupChip('newUserGroupsPicker', 'newUserCustomGroup')">+
+                                        Dodaj grupę</button>
                                 </div>
                             </div>
                         </div>
@@ -950,8 +1040,46 @@
                             <label for="csvFile">Plik CSV:</label>
                             <input type="file" id="csvFile" accept=".csv" required>
                         </div>
-                        <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 6px;">Importuj listę z CSV</button>
+                        <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 6px;">Importuj
+                            listę z CSV</button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: IMAGES (MACIERZ UPRAWNIEŃ) -->
+        <div id="imagesTab" class="tab-content">
+            <!-- PERMISSIONS MATRIX CARD -->
+            <div class="card">
+                <!-- MATRIX TABLE -->
+                <div class="table-responsive"
+                    style="overflow-x: auto; border: 1px solid var(--border-color); max-height: 75vh;">
+                    <table class="matrix-table" id="permissionsMatrixTable">
+                        <thead id="matrixThead">
+                            <tr>
+                                <th style="text-align: left; min-width: 240px;">Środowisko</th>
+                                <th style="min-width: 110px; text-align: center;">Dla wszystkich</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTbody">
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--muted-color); padding: 24px;">
+                                    Ładowanie macierzy uprawnień...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div style="font-size: 11px; color: var(--muted-color);">
+                        Pamiętaj: Po dokonaniu zmian kliknij przycisk <strong>Zapisz zmiany w macierzy</strong>, aby
+                        zaktualizować pliki konfiguracyjne środowisk.
+                    </div>
+                    <button type="button" class="btn" onclick="savePermissionsMatrix()"
+                        style="padding: 9px 20px; font-weight: 600;">
+                        Zapisz zmiany w macierzy
+                    </button>
                 </div>
             </div>
         </div>
@@ -1004,7 +1132,7 @@
     </div>
 
     <script>
-        let cachedUsers = null, cachedOnline = null;
+        let cachedUsers = null, cachedOnline = null, cachedImages = null;
         let openLogs = {};
         let activeLogFile = null;
         let activeMainTab = 'users';
@@ -1032,6 +1160,8 @@
         }
 
         function closeModal() {
+            const modalBox = document.querySelector('#customModal .modal-box');
+            if (modalBox) modalBox.classList.remove('modal-lg');
             document.getElementById('customModal').classList.remove('active');
         }
 
@@ -1136,19 +1266,31 @@
             setTimeout(checkServerStatus, 2500);
         }
 
-        async function loadAll() {
+        async function loadAll(forceImages = false) {
             try {
-                const [usersRes, onlineRes] = await Promise.all([
+                const fetches = [
                     fetch('/api/users').then(r => r.json()),
                     fetch('/api/online').then(r => r.json())
-                ]);
+                ];
+                if (forceImages || !cachedImages || cachedImages.length === 0) {
+                    fetches.push(fetch('/api/images').then(r => r.json()));
+                }
 
-                cachedUsers = usersRes;
-                cachedOnline = onlineRes;
+                const results = await Promise.all(fetches);
+                cachedUsers = results[0];
+                cachedOnline = results[1];
+                if (results[2]) {
+                    cachedImages = results[2];
+                }
+
                 updateGroups();
                 updateLogUserFilterOptions();
                 updateMetrics();
                 renderUsers();
+
+                if (forceImages || results[2]) {
+                    renderImages();
+                }
 
                 await checkServerStatus();
 
@@ -1167,10 +1309,20 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
             if (btn) btn.classList.add('active');
-            document.getElementById(tabId + 'Tab').classList.add('active');
+            const target = document.getElementById(tabId + 'Tab');
+            if (target) target.classList.add('active');
 
             if (tabId === 'logs') {
                 refreshLogsList();
+            } else if (tabId === 'images') {
+                if (!cachedImages || cachedImages.length === 0) {
+                    fetch('/api/images').then(r => r.json()).then(images => {
+                        cachedImages = images;
+                        renderImages();
+                    });
+                } else {
+                    renderImages();
+                }
             }
         }
 
@@ -1178,6 +1330,9 @@
             const groups = new Set();
             getAllUsers().forEach(user => (user.groups || []).forEach(group => {
                 if (group && String(group).trim()) groups.add(String(group).trim());
+            }));
+            (cachedImages || []).forEach(img => (img.allowed_groups || []).forEach(group => {
+                if (group && String(group).trim() && group !== '*' && group !== 'all') groups.add(String(group).trim());
             }));
             return Array.from(groups).sort();
         }
@@ -1215,7 +1370,7 @@
                 const newChip = document.createElement('span');
                 newChip.className = 'group-chip-item selected';
                 newChip.setAttribute('data-group', val);
-                newChip.onclick = function() { this.classList.toggle('selected'); };
+                newChip.onclick = function () { this.classList.toggle('selected'); };
                 newChip.innerHTML = `<span class="chip-check">✓ </span>${escapeHtml(val)}`;
                 chipsList.appendChild(newChip);
             }
@@ -1399,6 +1554,193 @@
             renderUsers();
         }
 
+        /* ===== MACIERZ UPRAWNIEŃ ===== */
+
+        function renderImages() {
+            const images = cachedImages || [];
+            const groups = getKnownGroups();
+
+            // Aktualizacja metryk obrazów
+            const total = images.length;
+            const pubCount = images.filter(i => i.access_all).length;
+            const restrCount = images.filter(i => !i.access_all).length;
+            if (document.getElementById('metricTotalImages')) document.getElementById('metricTotalImages').textContent = total;
+            if (document.getElementById('metricPublicImages')) document.getElementById('metricPublicImages').textContent = pubCount;
+            if (document.getElementById('metricRestrictedImages')) document.getElementById('metricRestrictedImages').textContent = restrCount;
+
+            const theadEl = document.getElementById('matrixThead');
+            const tbodyEl = document.getElementById('matrixTbody');
+            if (!theadEl || !tbodyEl) return;
+
+            if (!images.length) {
+                tbodyEl.innerHTML = `<tr><td colspan="${groups.length + 2}" style="text-align: center; color: var(--muted-color); padding: 24px;">Brak zdefiniowanych środowisk w katalogu images/.</td></tr>`;
+                return;
+            }
+
+            // Nagłówek macierzy
+            theadEl.innerHTML = `
+                <tr>
+                    <th style="text-align: left; min-width: 240px;">Środowisko</th>
+                    <th style="min-width: 110px; text-align: center;">Dla wszystkich</th>
+                    ${groups.map(g => `<th style="min-width: 90px; text-align: center;">${escapeHtml(g)}</th>`).join('')}
+                </tr>
+            `;
+
+            // Wiersze macierzy
+            tbodyEl.innerHTML = images.map(img => {
+                const isAll = img.access_all;
+                const allowed = img.allowed_groups || [];
+
+                const groupCbs = groups.map(g => {
+                    const isChecked = !isAll && allowed.includes(g);
+                    return `
+                        <td>
+                            <input type="checkbox" class="matrix-group-cb matrix-img-${escapeHtml(img.name)}"
+                                data-img="${escapeHtml(img.name)}" data-group="${escapeHtml(g)}"
+                                ${isChecked ? 'checked' : ''} ${isAll ? 'disabled' : ''}
+                                onchange="onMatrixGroupChange('${escapeHtml(img.name)}')"
+                                style="cursor: ${isAll ? 'not-allowed' : 'pointer'};">
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="matrix-row" data-img-row="${escapeHtml(img.name)}" data-search="${escapeHtml((img.name + ' ' + (img.description || '') + ' ' + (img.base_image || '')).toLowerCase())}">
+                        <td style="text-align: left;">
+                            <strong style="font-size: 13px;">${escapeHtml(img.description || img.name)}</strong>
+                            <div style="font-size: 11px; color: var(--muted-color); margin-top: 2px;">
+                                <span style="font-family: var(--font-mono);">${escapeHtml(img.name)}</span>
+                                <span style="margin: 0 4px;">•</span>
+                                <code style="font-family: var(--font-mono); font-size: 10px; background: rgba(0,0,0,0.05); padding: 1px 4px;">${escapeHtml(img.base_image || '-')}</code>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="checkbox" class="matrix-all-cb" data-img="${escapeHtml(img.name)}"
+                                ${isAll ? 'checked' : ''} onchange="onMatrixAllChange('${escapeHtml(img.name)}', this.checked)"
+                                style="cursor: pointer;">
+                        </td>
+                        ${groupCbs}
+                    </tr>
+                `;
+            }).join('');
+
+            filterMatrixRows();
+        }
+
+        function filterMatrixRows() {
+            const query = (document.getElementById('matrixSearch') ? document.getElementById('matrixSearch').value : '').trim().toLowerCase();
+            const rows = document.querySelectorAll('.matrix-row');
+            rows.forEach(r => {
+                const text = r.getAttribute('data-search') || '';
+                r.style.display = (!query || text.includes(query)) ? '' : 'none';
+            });
+        }
+
+        function onMatrixAllChange(imgName, isAllChecked) {
+            const rowCbs = document.querySelectorAll(`.matrix-group-cb.matrix-img-${imgName}`);
+            rowCbs.forEach(cb => {
+                cb.disabled = isAllChecked;
+                cb.style.cursor = isAllChecked ? 'not-allowed' : 'pointer';
+                if (isAllChecked) cb.checked = false;
+            });
+            saveSingleImageAccess(imgName);
+        }
+
+        function onMatrixGroupChange(imgName) {
+            saveSingleImageAccess(imgName);
+        }
+
+        async function saveSingleImageAccess(imgName) {
+            const allCb = document.querySelector(`.matrix-all-cb[data-img="${imgName}"]`);
+            const isAll = allCb ? allCb.checked : true;
+            const allowed = [];
+            if (!isAll) {
+                const groupCbs = document.querySelectorAll(`.matrix-group-cb[data-img="${imgName}"]`);
+                groupCbs.forEach(gCb => {
+                    if (gCb.checked) {
+                        allowed.push(gCb.getAttribute('data-group'));
+                    }
+                });
+            }
+
+            // Natychmiastowa aktualizacja stanu lokalnego w pamięci podręcznej
+            const imgObj = (cachedImages || []).find(i => i.name === imgName);
+            if (imgObj) {
+                imgObj.access_all = isAll;
+                imgObj.allowed_groups = allowed;
+            }
+
+            try {
+                const res = await fetch(`/api/images/${encodeURIComponent(imgName)}/access`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        access_all: isAll,
+                        allowed_groups: allowed
+                    })
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    showNotification(`Zapisano uprawnienia dla ${imgName}`, 'success');
+                } else {
+                    showNotification(`Błąd zapisu uprawnień dla ${imgName}: ${res.error || 'Błąd'}`, 'danger');
+                }
+            } catch (e) {
+                showNotification(`Błąd połączenia podczas zapisu ${imgName}`, 'danger');
+            }
+        }
+
+        function toggleAllMatrixPublic(publicState) {
+            document.querySelectorAll('.matrix-all-cb').forEach(cb => {
+                cb.checked = publicState;
+                const imgName = cb.getAttribute('data-img');
+                onMatrixAllChange(imgName, publicState);
+            });
+        }
+
+        async function savePermissionsMatrix() {
+            const images = cachedImages || [];
+            const payload = {};
+
+            images.forEach(img => {
+                const allCb = document.querySelector(`.matrix-all-cb[data-img="${img.name}"]`);
+                const isAll = allCb ? allCb.checked : true;
+                const allowed = [];
+
+                if (!isAll) {
+                    const groupCbs = document.querySelectorAll(`.matrix-group-cb[data-img="${img.name}"]`);
+                    groupCbs.forEach(gCb => {
+                        if (gCb.checked) {
+                            allowed.push(gCb.getAttribute('data-group'));
+                        }
+                    });
+                }
+
+                payload[img.name] = {
+                    access_all: isAll,
+                    allowed_groups: allowed
+                };
+            });
+
+            try {
+                showNotification('Zapisywanie uprawnień macierzy...', 'info');
+                const res = await fetch('/api/images/bulk-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    showNotification(`Pomyślnie zapisano!`, 'success');
+                    await loadAll(true);
+                } else {
+                    showNotification('Błąd zapisu macierzy uprawnień.', 'danger');
+                }
+            } catch (e) {
+                showNotification('Błąd połączenia podczas zapisywania macierzy.', 'danger');
+            }
+        }
+
         async function executeBulkDelete() {
             if (selectedUsernames.size === 0) return;
             const count = selectedUsernames.size;
@@ -1458,15 +1800,17 @@
 
         function initTheme() {
             const savedTheme = localStorage.getItem('admin_theme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-mode');
-                const btn = document.getElementById('themeToggleBtn');
-                if (btn) btn.textContent = 'Jasny motyw';
-            }
+            const isDark = (savedTheme === 'dark');
+            document.documentElement.classList.toggle('dark-mode', isDark);
+            document.body.classList.toggle('dark-mode', isDark);
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.textContent = isDark ? 'Jasny motyw' : 'Ciemny motyw';
         }
 
         function toggleTheme() {
-            const isDark = document.body.classList.toggle('dark-mode');
+            const isDark = !document.body.classList.contains('dark-mode');
+            document.documentElement.classList.toggle('dark-mode', isDark);
+            document.body.classList.toggle('dark-mode', isDark);
             localStorage.setItem('admin_theme', isDark ? 'dark' : 'light');
             const btn = document.getElementById('themeToggleBtn');
             if (btn) btn.textContent = isDark ? 'Jasny motyw' : 'Ciemny motyw';
@@ -1907,13 +2251,13 @@
         async function logoutAdmin() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
-            } catch (e) {}
+            } catch (e) { }
             window.location.href = '/login';
         }
 
         // Polling
-        loadAll();
-        setInterval(loadAll, 5000);
+        loadAll(true);
+        setInterval(() => loadAll(false), 5000);
         setInterval(() => {
             if (activeLogFile) updateLogContent();
         }, 2000);

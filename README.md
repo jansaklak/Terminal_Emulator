@@ -8,3 +8,48 @@ Projekt składa się z dwóch głównych modułów:
 
 - `Server/` – Serwer bramy terminalowej TCP (Python / Docker) oraz webowy panel administracyjny Flask.
 - `Client/` – Wieloplatformowa aplikacja kliencka (Java 17 / JavaFX / JediTerm).
+
+## Szybki start
+
+### 1. Uruchomienie serwera
+
+Wymagania: Docker oraz Docker Compose.
+
+```bash
+cd Server
+docker compose up -d --build
+```
+
+> **Wskazówka (aktualizacja bez pamięci podręcznej):** Aby upewnić się, że po aktualizacji kodu serwer korzysta z najnowszych plików:
+> ```bash
+> docker compose build --no-cache && docker compose up -d --force-recreate
+> ```
+
+- Brama terminalowa TCP nasłuchuje na porcie `51234`.
+- Panel administracyjny jest dostępny pod adresem: `http://localhost:5001`.
+
+### 2. Uruchomienie klienta
+
+Wymagania: Java 17+ (JRE lub JDK).
+
+```bash
+cd Client
+java -jar dist/TerminalClient.jar
+```
+
+W oknie logowania należy podać adres serwera (`localhost` lub IP w sieci lokalnej), port `51234` oraz poświadczenia użytkownika.
+
+### 3. Zatrzymanie systemu
+
+```bash
+cd Server
+docker compose down
+```
+
+Serwer automatycznie przechwytuje sygnał zamknięcia i usuwa wszystkie powołane w trakcie pracy kontenery baz danych studentów. Aby usunąć również wolumeny danych: `docker compose down -v`.
+
+## Szczegółowa dokumentacja modułów
+
+Szczegółowe instrukcje konfiguracji i budowania znajdują się w dedykowanych plikach:
+- `Server/README.md` – konfiguracja środowisk bazodanowych, import użytkowników i REST API.
+- `Client/README.md` – kompilacja ze źródeł Maven i tworzenie paczek dystrybucyjnych Universal JAR.

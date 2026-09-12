@@ -38,5 +38,9 @@
             "echo 'Czekam na uruchomienie SQLite (Pociągi)...'; until [ -f /data/pociagi.db ]; do sleep 1; done; sqlite3 /data/pociagi.db"
         ]
     },
-    "description": "SQLite - Pociągi Kolekcjonerskie"
+    "description": "SQLite - Pociągi Kolekcjonerskie",
+    "access_all": false,
+    "allowed_groups": [
+        "bazy3"
+    ]
 }

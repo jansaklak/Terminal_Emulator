@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Okno logowania
@@ -180,6 +183,7 @@ public class LoginScreen {
                     JSONObject configs = resp.optJSONObject("available_configs");
                     Map<String, Boolean> recordingPermissions = new HashMap<>();
                     Map<String, Boolean> autoExecutePermissions = new HashMap<>();
+                    Map<String, String> configBaseImages = new HashMap<>();
 
                     if (configs != null) {
                         for (String key : configs.keySet()) {
@@ -187,11 +191,14 @@ public class LoginScreen {
                             if (raw instanceof JSONObject cfgObj) {
                                 recordingPermissions.put(key, cfgObj.optBoolean("can_record_commands", false));
                                 autoExecutePermissions.put(key, cfgObj.optBoolean("can_auto_execute", false));
+                                configBaseImages.put(key, cfgObj.optString("base_image", key));
+                            } else {
+                                configBaseImages.put(key, key);
                             }
                         }
                     }
 
-                    Platform.runLater(() -> showConfigSelection(socket, br, displayName, configs, recordingPermissions, autoExecutePermissions, pw, isDark));
+                    Platform.runLater(() -> showConfigSelection(socket, br, displayName, configs, recordingPermissions, autoExecutePermissions, configBaseImages, pw, isDark));
 
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
@@ -212,7 +219,7 @@ public class LoginScreen {
         primaryStage.show();
     }
 
-    private void launchEnvironment(Socket socket, BufferedReader br, String username, String configKey, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, PrintWriter pw, boolean isDark, byte[] autoLoadCmdsData, boolean resetContainer) {
+    private void launchEnvironment(Socket socket, BufferedReader br, String username, String configKey, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, Map<String, String> configBaseImages, PrintWriter pw, boolean isDark, byte[] autoLoadCmdsData, boolean resetContainer) {
         try {
             JSONObject choice = new JSONObject();
             choice.put("config", configKey);
@@ -254,14 +261,15 @@ public class LoginScreen {
                 }).start();
             }
 
-            terminalApp.showTerminal(new Stage(), username, connector, isDark, canRecordCommands, canAutoExecute);
+            String baseImage = configBaseImages != null ? configBaseImages.getOrDefault(configKey, configKey) : configKey;
+            terminalApp.showTerminal(new Stage(), username, baseImage, connector, isDark, canRecordCommands, canAutoExecute);
             primaryStage.close();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void showConfigSelection(Socket socket, BufferedReader br, String username, JSONObject configs, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, PrintWriter pw, boolean isDark) {
+    private void showConfigSelection(Socket socket, BufferedReader br, String username, JSONObject configs, Map<String, Boolean> recordingPermissions, Map<String, Boolean> autoExecutePermissions, Map<String, String> configBaseImages, PrintWriter pw, boolean isDark) {
         VBox layout = new VBox(10);
         layout.setAlignment(Pos.CENTER);
         layout.setPadding(new Insets(20));
@@ -272,7 +280,7 @@ public class LoginScreen {
         info.setFont(Font.font("Consolas", 14));
         layout.getChildren().add(info);
 
-        if (configs != null) {
+        if (configs != null && !configs.isEmpty()) {
             for (String key : configs.keySet()) {
                 String label = key;
                 Object raw = configs.get(key);
@@ -285,9 +293,15 @@ public class LoginScreen {
                 Button b = new Button(label);
                 b.setMaxWidth(Double.MAX_VALUE);
                 b.setStyle("-fx-background-color: #45475a; -fx-text-fill: #cdd6f4; -fx-cursor: hand;");
-                b.setOnAction(e -> launchEnvironment(socket, br, username, key, recordingPermissions, autoExecutePermissions, pw, isDark, null, false));
+                b.setOnAction(e -> launchEnvironment(socket, br, username, key, recordingPermissions, autoExecutePermissions, configBaseImages, pw, isDark, null, false));
                 layout.getChildren().add(b);
             }
+        } else {
+            Text noConfig = new Text("Brak przypisanych środowisk dla Twojej grupy.\nSkontaktuj się z administratorem.");
+            noConfig.setFill(Color.web("#f38ba8"));
+            noConfig.setFont(Font.font("Consolas", 12));
+            noConfig.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            layout.getChildren().add(noConfig);
         }
 
         Separator sep = new Separator();
@@ -302,35 +316,79 @@ public class LoginScreen {
             try {
                 FileChooser fc = new FileChooser();
                 fc.setTitle("Wybierz plik komend (.cmds)");
-                fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki komend (*.cmds)", "*.cmds", "*.txt"));
+                fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki komend (*.cmds, *.txt)", "*.cmds", "*.txt"));
                 File selectedFile = fc.showOpenDialog(primaryStage);
                 if (selectedFile == null) return;
 
                 byte[] fileData = java.nio.file.Files.readAllBytes(selectedFile.toPath());
-                String filenameLower = selectedFile.getName().toLowerCase();
-                String fileContentStr = new String(fileData, StandardCharsets.UTF_8).toLowerCase();
+                String fileContentStr = new String(fileData, StandardCharsets.UTF_8);
 
                 String matchedKey = null;
-                if (configs != null && !configs.isEmpty()) {
-                    List<String> keys = new ArrayList<>(configs.keySet());
-                    keys.sort((k1, k2) -> Integer.compare(k2.length(), k1.length()));
 
-                    for (String key : keys) {
-                        String keyLower = key.toLowerCase();
-                        if (filenameLower.contains(keyLower) || fileContentStr.contains(keyLower)) {
-                            matchedKey = key;
-                            break;
+                // 1. Sprawdzenie nagłówka w pliku pod kątem BASE_IMAGE
+                Pattern baseImgPattern = Pattern.compile("(?im)^\\s*BASE_IMAGE\\s*:\\s*([a-zA-Z0-9_.-]+)");
+                Matcher matcher = baseImgPattern.matcher(fileContentStr);
+                if (matcher.find()) {
+                    String baseImageFound = matcher.group(1).trim();
+                    if (configs != null && !configs.isEmpty()) {
+                        for (String key : configs.keySet()) {
+                            String curBaseImg = configBaseImages.getOrDefault(key, key);
+                            if (curBaseImg.equalsIgnoreCase(baseImageFound)) {
+                                matchedKey = key;
+                                break;
+                            }
                         }
+                    }
+
+                    if (matchedKey == null) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Brak uprawnień do obrazu");
+                        alert.setHeaderText("Wymagany obraz bazowy nie jest dla Ciebie dostępny.");
+                        alert.setContentText("Plik wymaga obrazu bazowego: '" + baseImageFound + "', do którego Twoja grupa nie ma uprawnień.");
+                        alert.showAndWait();
+                        return;
+                    }
+                }
+
+                // 2. Jeśli brak nagłówka BASE_IMAGE, pozwól użytkownikowi wybrać obraz z listy
+                if (matchedKey == null && configs != null && !configs.isEmpty()) {
+                    List<String> choices = new ArrayList<>();
+                    Map<String, String> displayToKey = new HashMap<>();
+
+                    for (String key : configs.keySet()) {
+                        String label = key;
+                        Object raw = configs.get(key);
+                        if (raw instanceof JSONObject cfgObj) {
+                            label = cfgObj.optString("description", key);
+                        } else if (raw instanceof String s) {
+                            label = s;
+                        }
+                        String bImg = configBaseImages.getOrDefault(key, key);
+                        String display = label + " [" + bImg + "]";
+                        choices.add(display);
+                        displayToKey.put(display, key);
+                    }
+
+                    ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
+                    dialog.setTitle("Wybór obrazu");
+                    dialog.setHeaderText("Plik nie zawiera nagłówka BASE_IMAGE.");
+                    dialog.setContentText("Wybierz obraz, w którym chcesz odtworzyć polecenia:");
+
+                    Optional<String> result = dialog.showAndWait();
+                    if (result.isPresent()) {
+                        matchedKey = displayToKey.get(result.get());
+                    } else {
+                        return; // Użytkownik anulował okno wyboru
                     }
                 }
 
                 if (matchedKey != null) {
-                    launchEnvironment(socket, br, username, matchedKey, recordingPermissions, autoExecutePermissions, pw, isDark, fileData, true);
+                    launchEnvironment(socket, br, username, matchedKey, recordingPermissions, autoExecutePermissions, configBaseImages, pw, isDark, fileData, true);
                 } else {
                     Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Rozpoznawanie obrazu");
-                    alert.setHeaderText("Nie rozpoznano automatycznie obrazu z pliku .cmds.");
-                    alert.setContentText("Nazwa pliku nie zawiera nazwy znanego środowiska.");
+                    alert.setTitle("Brak obrazów");
+                    alert.setHeaderText("Nie można uruchomić pliku.");
+                    alert.setContentText("Brak dostępnych konfiguracji dla Twojego konta.");
                     alert.showAndWait();
                 }
             } catch (Exception ex) {

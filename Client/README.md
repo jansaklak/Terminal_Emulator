@@ -17,11 +17,10 @@ W katalogu `Client/`:
 java -jar dist/TerminalClient.jar
 ```
 
-Aplikacja uruchamia się bez konieczności wcześniejszej instalacji i nie wymaga uprawnień administratora.
 
 ## Budowanie ze źródeł
 
-Projekt korzysta z narzędzia Maven. Aby zbudować samowystarczalny plik Universal Fat JAR zawierający wszystkie biblioteki graficzne:
+Projekt korzysta z narzędzia Maven. Aby zbudować samowystarczalny plik JAR zawierający wszystkie biblioteki graficzne:
 
 - **System Linux / macOS:**
   ```bash

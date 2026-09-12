@@ -29,5 +29,9 @@
             "/bin/bash"
         ]
     },
-    "description": "Powłoka bash (Ubuntu)"
+    "description": "Powłoka bash (Ubuntu)",
+    "access_all": false,
+    "allowed_groups": [
+        "bazy1"
+    ]
 }

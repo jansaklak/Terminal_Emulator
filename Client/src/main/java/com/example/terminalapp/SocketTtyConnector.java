@@ -23,6 +23,7 @@ public class SocketTtyConnector implements TtyConnector {
     private volatile boolean closed = false;
 
     private String lastCommandsData = null;
+    private byte[] lastCommandsRawBytes = null;
     private final Object commandsLock = new Object();
     private final Object bufferLock = new Object();
     
@@ -105,13 +106,17 @@ public class SocketTtyConnector implements TtyConnector {
                     try {
                         if (json.optBoolean("b64", false)) {
                             byte[] decoded = java.util.Base64.getDecoder().decode(json.optString("data", ""));
+                            lastCommandsRawBytes = decoded;
                             lastCommandsData = new String(decoded, StandardCharsets.UTF_8);
                         } else {
-                            lastCommandsData = json.optString("data", "");
+                            String d = json.optString("data", "");
+                            lastCommandsData = d;
+                            lastCommandsRawBytes = d.getBytes(StandardCharsets.UTF_8);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                         lastCommandsData = "";
+                        lastCommandsRawBytes = new byte[0];
                     }
                     commandsLock.notifyAll();
                 }
@@ -133,6 +138,19 @@ public class SocketTtyConnector implements TtyConnector {
                 e.printStackTrace();
             }
             return lastCommandsData != null ? lastCommandsData : "";
+        }
+    }
+
+    public byte[] getRecordedCommandsBytes() {
+        synchronized (commandsLock) {
+            lastCommandsRawBytes = null;
+            try {
+                write(GET_CMDS_CONTROL);
+                commandsLock.wait(5000);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return lastCommandsRawBytes != null ? lastCommandsRawBytes : new byte[0];
         }
     }
 

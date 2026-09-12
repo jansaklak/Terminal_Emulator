@@ -16,13 +16,17 @@ if hasattr(time, 'tzset'):
 
 from flask import Flask, jsonify, render_template, request, send_file, session, redirect
 
-app = Flask(__name__)
+PANEL_DIR = Path(__file__).resolve().parent
+BASE_DIR = PANEL_DIR.parent if PANEL_DIR.name == 'web_panel' else PANEL_DIR
+
+app = Flask(__name__, template_folder=str(PANEL_DIR))
 app.secret_key = os.environ.get('ADMIN_SECRET_KEY', 'terminal_emulator_admin_secret_key_2026')
 
-CONFIG_FILE = 'server_config.json'
-IMAGES_DIR = 'images'
-USERS_FILE = 'users.json'
-COMMANDS_DIR = Path('commands').resolve()
+CONFIG_FILE = str(BASE_DIR / 'server_config.json')
+IMAGES_DIR = str(BASE_DIR / 'images')
+USERS_FILE = str(BASE_DIR / 'users.json')
+COMMANDS_DIR = (BASE_DIR / 'commands').resolve()
+ONLINE_FILE = str(BASE_DIR / 'online.json')
 LOGS_ROOT = Path('/var/log/terminal-server')
 
 PUBLIC_ENDPOINTS = {'login_page', 'api_login', 'static'}
@@ -78,7 +82,7 @@ def get_log_dir():
     path = Path(configured).resolve()
     if path.exists():
         return path
-    fallback = Path('logs').resolve()
+    fallback = (BASE_DIR / 'logs').resolve()
     fallback.mkdir(parents=True, exist_ok=True)
     return fallback
 
@@ -177,6 +181,159 @@ def index():
 @app.route('/api/config')
 def get_config():
     return jsonify(load_config())
+
+
+def get_image_config_path(image_name):
+    clean_name = os.path.basename(image_name)
+    target = os.path.join(IMAGES_DIR, clean_name, 'config.json')
+    if os.path.isfile(target):
+        return target
+    return None
+
+
+def load_all_images():
+    images = []
+    if os.path.exists(IMAGES_DIR):
+        for entry in os.scandir(IMAGES_DIR):
+            if not entry.is_dir():
+                continue
+            cfg_path = os.path.join(entry.path, 'config.json')
+            if not os.path.isfile(cfg_path):
+                continue
+            try:
+                with open(cfg_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+            except Exception:
+                cfg = {}
+
+            access_all = bool(cfg.get('access_all', True))
+            raw_groups = cfg.get('allowed_groups')
+            if raw_groups is None:
+                raw_groups = cfg.get('groups', [])
+            if isinstance(raw_groups, list):
+                allowed_groups = [str(g).strip() for g in raw_groups if str(g).strip()]
+            elif isinstance(raw_groups, str):
+                allowed_groups = [g.strip() for g in raw_groups.split(',') if g.strip()]
+            else:
+                allowed_groups = []
+
+            images.append({
+                'id': entry.name,
+                'name': entry.name,
+                'description': cfg.get('description', entry.name),
+                'base_image': cfg.get('session', {}).get('image', '-'),
+                'base_name': cfg.get('session', {}).get('base_name', ''),
+                'access_all': access_all,
+                'allowed_groups': allowed_groups
+            })
+
+    images.sort(key=lambda x: x['name'].lower())
+    return images
+
+
+@app.route('/api/images')
+def get_images_api():
+    return jsonify(load_all_images())
+
+
+@app.route('/api/images/<image_name>/access', methods=['PUT'])
+def update_image_access(image_name):
+    cfg_path = get_image_config_path(image_name)
+    if not cfg_path:
+        return jsonify({'ok': False, 'error': f'Obraz {image_name} nie istnieje'}), 404
+
+    data = request.json or {}
+    access_all = bool(data.get('access_all', True))
+    raw_groups = data.get('allowed_groups')
+    if raw_groups is None:
+        raw_groups = data.get('groups', [])
+
+    if isinstance(raw_groups, list):
+        allowed_groups = [str(g).strip() for g in raw_groups if str(g).strip()]
+    elif isinstance(raw_groups, str):
+        allowed_groups = [g.strip() for g in raw_groups.split(',') if g.strip()]
+    else:
+        allowed_groups = []
+
+    try:
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+
+        cfg['access_all'] = access_all
+        cfg['allowed_groups'] = allowed_groups
+        if 'groups' in cfg:
+            del cfg['groups']
+
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=4, ensure_ascii=False)
+
+        return jsonify({
+            'ok': True,
+            'image': {
+                'id': image_name,
+                'name': image_name,
+                'description': cfg.get('description', image_name),
+                'base_image': cfg.get('session', {}).get('image', '-'),
+                'base_name': cfg.get('session', {}).get('base_name', ''),
+                'access_all': access_all,
+                'allowed_groups': allowed_groups
+            }
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/images/bulk-access', methods=['POST'])
+def bulk_update_images_access():
+    data = request.json or {}
+    images_payload = data.get('images', data)
+    if not isinstance(images_payload, dict):
+        return jsonify({'ok': False, 'error': 'Nieprawidłowy format danych'}), 400
+
+    updated_count = 0
+    errors = []
+
+    for img_name, access_data in images_payload.items():
+        if not isinstance(access_data, dict):
+            continue
+        cfg_path = get_image_config_path(img_name)
+        if not cfg_path:
+            errors.append(f'Obraz {img_name} nie istnieje')
+            continue
+
+        try:
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+
+            access_all = bool(access_data.get('access_all', True))
+            raw_groups = access_data.get('allowed_groups')
+            if raw_groups is None:
+                raw_groups = access_data.get('groups', [])
+
+            if isinstance(raw_groups, list):
+                allowed_groups = [str(g).strip() for g in raw_groups if str(g).strip()]
+            elif isinstance(raw_groups, str):
+                allowed_groups = [g.strip() for g in raw_groups.split(',') if g.strip()]
+            else:
+                allowed_groups = []
+
+            cfg['access_all'] = access_all
+            cfg['allowed_groups'] = allowed_groups
+            if 'groups' in cfg:
+                del cfg['groups']
+
+            with open(cfg_path, 'w', encoding='utf-8') as f:
+                json.dump(cfg, f, indent=4, ensure_ascii=False)
+
+            updated_count += 1
+        except Exception as e:
+            errors.append(f'Błąd zapisu {img_name}: {e}')
+
+    return jsonify({
+        'ok': len(errors) == 0,
+        'updated_count': updated_count,
+        'errors': errors
+    })
 
 
 @app.route('/api/users')
@@ -330,9 +487,9 @@ def bulk_add_group():
 
 @app.route('/api/online')
 def get_online():
-    if not os.path.exists('online.json'):
+    if not os.path.exists(ONLINE_FILE):
         return jsonify({})
-    with open('online.json', 'r', encoding='utf-8') as file_handle:
+    with open(ONLINE_FILE, 'r', encoding='utf-8') as file_handle:
         return jsonify(json.load(file_handle))
 
 
@@ -521,9 +678,9 @@ def start_gateway_server():
             pass
 
     try:
-        server_script = Path(__file__).parent / 'server.py'
+        server_script = BASE_DIR / 'server.py'
         if server_script.exists():
-            subprocess.Popen([sys.executable, str(server_script.resolve())], cwd=str(server_script.parent.resolve()))
+            subprocess.Popen([sys.executable, str(server_script.resolve())], cwd=str(BASE_DIR.resolve()))
             return True, "Serwer (proces server.py) został uruchomiony w tle."
     except Exception as e:
         errors.append(str(e))

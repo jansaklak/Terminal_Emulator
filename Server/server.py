@@ -38,11 +38,7 @@ COMMANDS_DIR = Path("commands")
 
 
 def reset_online():
-    """Czyści plik `online.json` — wywoływane przy starcie serwera.
-
-    Funkcja nadpisuje plik pustym słownikiem, zapewniając, że po restarcie
-    nie ma pozostałych wpisów o zalogowanych sesjach.
-    """
+    """Czyści plik `online.json`."""
     try:
         with open(ONLINE_FILE, 'w', encoding='utf-8') as f:
             json.dump({}, f)
@@ -129,8 +125,11 @@ initial_cfg = get_live_config()
 HOST = initial_cfg.get("HOST", "0.0.0.0")
 PORT = initial_cfg.get("PORT", 51234)
 LOG_DIR = Path(initial_cfg.get("LOG_DIR", "/var/log/terminal-server"))
-
-LOG_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    LOG_DIR = Path("logs")
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -141,10 +140,22 @@ logging.basicConfig(
 )
 log = logging.getLogger("gateway")
 
+def strip_cmds_header(raw: bytes) -> bytes:
+    """Odcina blok nagłówka metadanych (do znacznika ### END HEADER ###) przed wykonaniem w PTY."""
+    marker = b"### END HEADER ###"
+    pos = raw.find(marker)
+    if pos != -1:
+        after = pos + len(marker)
+        while after < len(raw) and raw[after:after+1] in (b' ', b'\t', b'\r', b'\n'):
+            after += 1
+        return raw[after:]
+    return raw
+
 class SessionLogger:
-    def __init__(self, username: str, config: str, allow_commands: bool = False, image_name: str = ""):
+    def __init__(self, username: str, config: str, allow_commands: bool = False, image_name: str = "", base_name: str = ""):
         self.username = username
         self.config = config
+        self.base_name = base_name or config
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         clean_img = re.sub(r'[^a-zA-Z0-9_.-]', '_', image_name).strip('_') if image_name else ""
         if clean_img and clean_img.lower() != config.lower():
@@ -163,6 +174,10 @@ class SessionLogger:
                 COMMANDS_DIR.mkdir(parents=True, exist_ok=True)
                 (COMMANDS_DIR / str(self.config)).mkdir(parents=True, exist_ok=True)
                 self.commands_path = COMMANDS_DIR / str(self.config) / f"{filename_part}.cmds"
+                if not self.commands_path.exists():
+                    header = f"### TERMINAL EMULATOR HEADER ###\nBASE_IMAGE: {self.base_name}\n### END HEADER ###\n"
+                    with open(self.commands_path, "wb") as cf:
+                        cf.write(header.encode('utf-8'))
             except Exception:
                 self.commands_path = None
         else:
@@ -273,6 +288,76 @@ def resolve_host_path(base_path: str, relative_path: str) -> str:
     return posixpath.normpath(posixpath.join(base_path, relative_path))
 
 
+def get_host_project_path() -> str:
+    """Zwraca bezwzględną ścieżkę do katalogu projektu na maszynie hosta.
+
+    W środowisku Docker (gdy serwer działa w kontenerze) ścieżka wewnątrz to zazwyczaj '/app',
+    podczas gdy demon Dockera na hoście wymaga rzeczywistych ścieżek hosta do montowania wolumenów.
+    Jeśli PROJECT_PATH nie jest ustawiony lub wskazuje na '/app', funkcja automatycznie odpytuje
+    Dockera (docker inspect) o ścieżkę hosta podmontowaną pod /app.
+    """
+    env_path = os.environ.get("PROJECT_PATH")
+    if env_path and env_path != "/app" and not env_path.startswith("/app/"):
+        return env_path
+
+    for target in ["python_gateway", socket.gethostname()]:
+        try:
+            inspect_res = run_docker_command(["inspect", target, "--format", "{{json .Mounts}}"])
+            if inspect_res.returncode == 0:
+                mounts = json.loads(inspect_res.stdout)
+                for m in mounts:
+                    if m.get("Destination") == "/app":
+                        source = m.get("Source")
+                        if source:
+                            return source
+        except Exception:
+            pass
+
+    if env_path:
+        return env_path
+    return os.path.abspath(os.path.dirname(__file__))
+
+
+def cleanup_all_session_containers() -> None:
+    """Usuwa wszystkie kontenery sesyjne studentów oraz ich wolumeny z sieci lab-net."""
+    network_name = "lab-net"
+    known_prefixes = [
+        "mysql_", "sqlite_", "postgres_", "mongodb_", "linux_"
+    ]
+    container_ids = set()
+    res_net = run_docker_command(["ps", "-aq", "--filter", f"network={network_name}"])
+    if res_net.returncode == 0:
+        for line in res_net.stdout.splitlines():
+            cid = line.strip()
+            if cid:
+                container_ids.add(cid)
+
+    for prefix in known_prefixes:
+        res_p = run_docker_command(["ps", "-aq", "--filter", f"name={prefix}"])
+        if res_p.returncode == 0:
+            for line in res_p.stdout.splitlines():
+                cid = line.strip()
+                if cid:
+                    container_ids.add(cid)
+
+    # Wykluczamy kontenery infrastrukturalne (brama terminalowa, admin_panel)
+    self_ids = set()
+    for name in ["python_gateway", "admin_panel", socket.gethostname()]:
+        res_self = run_docker_command(["inspect", "-f", "{{.Id}}", name])
+        if res_self.returncode == 0 and res_self.stdout.strip():
+            cid = res_self.stdout.strip()
+            self_ids.add(cid)
+            self_ids.add(cid[:12])
+
+    to_remove = [cid for cid in container_ids if cid not in self_ids and not any(sid.startswith(cid) or cid.startswith(sid) for sid in self_ids)]
+    if to_remove:
+        try:
+            log.info("Czyszczenie kontenerów sesyjnych studentów: %s", " ".join(to_remove))
+        except Exception:
+            print(f"Czyszczenie kontenerów sesyjnych studentów: {' '.join(to_remove)}")
+        run_docker_command(["rm", "-f", *to_remove])
+
+
 def sanitize_docker_name(value: str) -> str:
     """Zamienia nazwę użytkownika na bezpieczną nazwę kontenera Docker.
 
@@ -340,7 +425,12 @@ def build_session_context(username: str, container_name: str, host_project_path:
 
     raw_sql_path = session.get("seed_sql")
     if raw_sql_path:
-        img_sql_path = resolve_host_path(img_base, raw_sql_path)
+        clean_img_base = img_base
+        if clean_img_base.startswith("/app/"):
+            clean_img_base = clean_img_base[len("/app/"):].lstrip("/\\")
+        elif clean_img_base == "/app":
+            clean_img_base = ""
+        img_sql_path = resolve_host_path(clean_img_base, raw_sql_path).lstrip("/\\")
         context["seed_sql_host_path"] = resolve_host_path(host_project_path, img_sql_path)
 
     return context
@@ -548,9 +638,11 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
         session_cfg = cfg.get('CONFIGS', {}).get(config_name, {})
         session_def = get_session_definition(session_cfg)
         image_name = session_def.get("image", "")
+        base_name = session_def.get("base_name", config_name)
     except Exception:
         session_cfg = {}
         image_name = ""
+        base_name = config_name
 
     # `forbid_*` wyłącza funkcję, a brak flagi oznacza domyślnie: dozwolone.
     forbid_cmd = bool(session_cfg.get('forbid_command_recording', False))
@@ -564,7 +656,7 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
         "can_auto_execute": auto_exec,
     }
 
-    session_log = SessionLogger(username, config_name, allow_commands=allow_cmds, image_name=image_name)
+    session_log = SessionLogger(username, config_name, allow_commands=allow_cmds, image_name=image_name, base_name=base_name)
     master_fd, slave_fd = pty.openpty()
     # Domyślny rozmiar na start (zostanie nadpisany przez klienta)
     set_winsize(master_fd, 24, 80)
@@ -600,7 +692,7 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
         except Exception:
             pass
 
-    # Clear client screen on session start to avoid mid-screen leftover
+    # Wykasowanie ekranu terminala przez co użytkownik widzi czysty ekran po połączeniu
     safe_send(b"\x1b[H\x1b[2J")
 
     def pty_to_tcp():
@@ -687,10 +779,9 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                             # odczyt zawartości (może być base64 lub tekst)
                             data_field = payload.get('data')
                             if data_field is None:
-                                print("DEBUG: load_commands data_field is None")
+                                print("DEBUG: load_commands - brak danych")
                                 continue
                             try:
-                                print(f"DEBUG: load_commands received data of length {len(data_field)}")
                                 if payload.get('b64'):
                                     raw = base64.b64decode(data_field.encode('utf-8'))
                                 else:
@@ -701,24 +792,32 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                                         raw = data_field.encode('latin-1', errors='replace')
                                 
                                 print(f"DEBUG: load_commands writing {len(raw)} bytes to {session_log.commands_path}")
-                                # zapisz do pliku (nadpisanie)
+                                # Upewnij się, że plik na dysku zawiera nagłówek BASE_IMAGE
+                                file_to_save = raw
+                                if b"### END HEADER ###" not in raw:
+                                    target_base = getattr(session_log, 'base_name', config_name)
+                                    header = f"### TERMINAL EMULATOR HEADER ###\nBASE_IMAGE: {target_base}\n### END HEADER ###\n".encode('utf-8')
+                                    file_to_save = header + raw
+
                                 session_log.commands_path.parent.mkdir(parents=True, exist_ok=True)
                                 with open(session_log.commands_path, 'wb') as cf:
-                                    cf.write(raw)
+                                    cf.write(file_to_save)
                                 
                                 # opcjonalne natychmiastowe wykonanie
                                 if payload.get('execute', True):
+                                    # Odcinamy nagłówek przed przekazaniem do PTY
+                                    to_exec = strip_cmds_header(raw)
                                     # Wierne odtworzenie: jeśli są znaki sterujące (np. \r), wysyłamy bajt po bajcie
                                     # W przeciwnym razie wysyłamy linia po linii.
-                                    if b'\r' in raw or b'\x1b' in raw or b'\t' in raw:
-                                        print("DEBUG: load_commands executing byte by byte")
-                                        for i in range(len(raw)):
-                                            os.write(master_fd, raw[i:i+1])
+                                    if b'\r' in to_exec or b'\x1b' in to_exec or b'\t' in to_exec:
+                                        print("DEBUG: load_commands wykonane bajt po bajcie")
+                                        for i in range(len(to_exec)):
+                                            os.write(master_fd, to_exec[i:i+1])
                                             # Mały delay dla stabilności (szczególnie przy Tab/Arrows)
                                             time.sleep(0.01)
                                     else:
-                                        print("DEBUG: load_commands executing line by line")
-                                        text = raw.decode('utf-8', errors='replace')
+                                        print("DEBUG: load_commands wykonane linia po lini")
+                                        text = to_exec.decode('utf-8', errors='replace')
                                         for line in text.splitlines():
                                             if not line.strip(): continue
                                             try:
@@ -759,6 +858,33 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
             shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
         log.info("Koniec sesji: użytkownik=%s konf=%s", username, config_name)
 
+def is_config_allowed_for_user(img_cfg: dict, user_groups: set) -> bool:
+    """Sprawdza, czy konfiguracja obrazu jest dostępna dla użytkownika o danych grupach.
+
+    Obraz jest dostępny, jeśli:
+    - access_all jest True (domyślnie, gdy brak wpisu w konfiguracji), LUB
+    - lista dozwolonych grup zawiera '*' lub 'all', LUB
+    - grupy użytkownika i dozwolone grupy obrazu posiadają część wspólną.
+    """
+    if img_cfg.get("access_all", True):
+        return True
+
+    allowed = img_cfg.get("allowed_groups")
+    if allowed is None:
+        allowed = img_cfg.get("groups")
+    if not allowed:
+        return False
+
+    if isinstance(allowed, str):
+        allowed = [allowed]
+
+    allowed_set = {str(g).strip() for g in allowed if str(g).strip()}
+    if "*" in allowed_set or "all" in allowed_set:
+        return True
+
+    return bool(user_groups & allowed_set)
+
+
 def handle_client(conn: socket.socket, addr):
     """Obsługuje jednego klienta: autoryzacja, wybór konfiguracji i uruchomienie sesji.
 
@@ -787,8 +913,28 @@ def handle_client(conn: socket.socket, addr):
             log.warning("Nieudana próba logowania: %s z adresu %s", username, addr)
             return conn.close()
 
+        # Filtrowanie konfiguracji według grup użytkownika
+        raw_user_groups = user_info.get("groups", [])
+        if isinstance(raw_user_groups, str):
+            raw_user_groups = [raw_user_groups]
+        user_groups = {str(g).strip() for g in raw_user_groups if str(g).strip()}
+
+        user_configs = {
+            k: v for k, v in configs.items()
+            if is_config_allowed_for_user(v, user_groups)
+        }
+
         # Wyślij listę dostępnych konfiguracji
-        config_list = {k: v.get("description", k) for k, v in configs.items()}
+        config_list = {}
+        for k, v in user_configs.items():
+            s_def = get_session_definition(v)
+            base_name = s_def.get("base_name", k)
+            config_list[k] = {
+                "description": v.get("description", k),
+                "base_image": base_name,
+                "can_record_commands": not v.get("forbid_command_recording", False),
+                "can_auto_execute": not v.get("forbid_auto_execute", False)
+            }
         conn.sendall(json.dumps({
             "ok": True,
             "display_name": user_info.get("display_name", username),
@@ -803,21 +949,21 @@ def handle_client(conn: socket.socket, addr):
         selected_key = choice_req.get("config")
         should_reset = bool(choice_req.get("reset", False))
 
-        if selected_key not in configs:
-            log.error("Nieprawidłowy wybór konfiguracji: %s przez %s", selected_key, username)
+        if selected_key not in user_configs:
+            log.error("Nieprawidłowy lub niedozwolony wybór konfiguracji: %s przez %s", selected_key, username)
             return conn.close()
 
-        host_project_path = os.environ.get("PROJECT_PATH") or os.path.abspath(os.path.dirname(__file__))
+        host_project_path = get_host_project_path()
 
         if should_reset:
             try:
                 log.info("Resetowanie kontenera na żądanie klienta dla użytkownika=%s, konf=%s", username, selected_key)
-                recreate_session_state(username, host_project_path, configs[selected_key])
+                recreate_session_state(username, host_project_path, user_configs[selected_key])
             except Exception as e:
                 log.error("Błąd podczas resetowania kontenera w handshake: %s", e)
 
         # Uruchomienie właściwej sesji
-        session_config = get_session_definition(configs[selected_key])
+        session_config = get_session_definition(user_configs[selected_key])
         session_permissions = {
             "can_record_commands": not bool(session_config.get("forbid_command_recording", False)),
             "can_auto_execute": not bool(session_config.get("forbid_auto_execute", False)),
@@ -850,8 +996,35 @@ def main():
     # Punkt wejścia serwera: nasłuchuje na porcie i akceptuje połączenia TCP.
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Resetujemy listę zalogowanych użytkowników przy starcie serwera
+
+    # Resetujemy listę zalogowanych użytkowników oraz czyścimy ewentualne stare kontenery sesyjne
     reset_online()
+    try:
+        cleanup_all_session_containers()
+    except Exception as e:
+        log.warning("Błąd podczas wstępnego sprzątania kontenerów: %s", e)
+
+    # Obsługa sygnałów zamknięcia kontenera (SIGTERM z docker compose down, SIGINT z Ctrl+C)
+    def shutdown_handler(signum, frame):
+        try:
+            sig_name = signal.Signals(signum).name
+        except Exception:
+            sig_name = str(signum)
+        log.info("Odebrano sygnał %s - zamykanie serwera i sprzątanie kontenerów sesyjnych...", sig_name)
+        try:
+            cleanup_all_session_containers()
+        except Exception as err:
+            log.error("Błąd podczas sprzątania kontenerów przy zamykaniu: %s", err)
+        reset_online()
+        try:
+            server_sock.close()
+        except Exception:
+            pass
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    signal.signal(signal.SIGINT, shutdown_handler)
+
     server_sock.bind((HOST, PORT))
     server_sock.listen(50)
     log.info("Brama Terminalowa nasłuchuje na %s:%d", HOST, PORT)
@@ -863,6 +1036,11 @@ def main():
     except KeyboardInterrupt:
         log.info("Zamykanie serwera.")
     finally:
+        try:
+            cleanup_all_session_containers()
+        except Exception:
+            pass
+        reset_online()
         server_sock.close()
 
 if __name__ == "__main__":

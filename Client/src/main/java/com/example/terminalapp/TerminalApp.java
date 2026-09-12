@@ -9,6 +9,9 @@ import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import java.util.Optional;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -78,7 +81,7 @@ public class TerminalApp extends Application {
         new LoginScreen(primaryStage, this).show();
     }
 
-    public void showTerminal(Stage stage, String username, SocketTtyConnector connector, boolean isDark, boolean canRecordCommands, boolean canAutoExecute) {
+    public void showTerminal(Stage stage, String username, String baseImage, SocketTtyConnector connector, boolean isDark, boolean canRecordCommands, boolean canAutoExecute) {
         BorderPane root = new BorderPane();
         
         String bgColor = isDark ? "#1e1e2e" : "#ffffff";
@@ -165,7 +168,7 @@ public class TerminalApp extends Application {
                     if (!canRecordCommands) return;
                     FileChooser fc = new FileChooser();
                     fc.setTitle("Zapisz komendy");
-                    fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki komend", "*.cmds", "*.txt"));
+                    fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki komend (*.cmds, *.txt)", "*.cmds", "*.txt"));
                     File target = fc.showSaveDialog(stage);
                     if (target == null) return;
                     if (!target.getName().contains(".")) {
@@ -178,9 +181,18 @@ public class TerminalApp extends Application {
 
                     new Thread(() -> {
                         try {
-                            String commands = connector.getRecordedCommandsText();
+                            byte[] recordedBytes = connector.getRecordedCommandsBytes();
+                            byte[] toWrite = recordedBytes;
+                            String contentCheck = new String(recordedBytes, StandardCharsets.UTF_8);
+                            if (!contentCheck.contains("### END HEADER ###")) {
+                                String header = "### TERMINAL EMULATOR HEADER ###\nBASE_IMAGE: " + (baseImage != null ? baseImage : "") + "\n### END HEADER ###\n";
+                                byte[] headerBytes = header.getBytes(StandardCharsets.UTF_8);
+                                toWrite = new byte[headerBytes.length + recordedBytes.length];
+                                System.arraycopy(headerBytes, 0, toWrite, 0, headerBytes.length);
+                                System.arraycopy(recordedBytes, 0, toWrite, headerBytes.length, recordedBytes.length);
+                            }
                             try (FileOutputStream out = new FileOutputStream(finalTarget)) {
-                                out.write(commands.getBytes(StandardCharsets.UTF_8));
+                                out.write(toWrite);
                             }
                             Platform.runLater(() -> {
                                 saveCmdBtn.setDisable(false);
@@ -201,13 +213,26 @@ public class TerminalApp extends Application {
         });
 
         restartBtn.setOnAction(e -> {
-            try { connector.requestReset(); } catch (Exception ex) { ex.printStackTrace(); }
-            connector.close();
-            stage.close();
-            Platform.runLater(() -> {
-                Stage loginStage = new Stage();
-                new LoginScreen(loginStage, this).show();
-            });
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.initOwner(stage);
+            alert.setTitle("Potwierdzenie");
+            alert.setHeaderText(null);
+            alert.setContentText("Czy na pewno chcesz przywrócić obraz do stanu początkowego?");
+
+            ButtonType takBtn = new ButtonType("Tak", ButtonBar.ButtonData.YES);
+            ButtonType nieBtn = new ButtonType("Nie", ButtonBar.ButtonData.NO);
+            alert.getButtonTypes().setAll(takBtn, nieBtn);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent() && result.get() == takBtn) {
+                try { connector.requestReset(); } catch (Exception ex) { ex.printStackTrace(); }
+                connector.close();
+                stage.close();
+                Platform.runLater(() -> {
+                    Stage loginStage = new Stage();
+                    new LoginScreen(loginStage, this).show();
+                });
+            }
         });
 
         clearBtn.setOnAction(e -> {
