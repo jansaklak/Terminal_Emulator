@@ -25,8 +25,8 @@ nbdist/
 **/.m2/
 *.class
 *.jar
-!Client/dist/
-!Client/dist/**
+!Client/.mvn/wrapper/maven-wrapper.jar
+Client/dist/
 *.zip
 TestBase64*
 
