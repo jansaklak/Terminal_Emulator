@@ -47,9 +47,3 @@ docker compose down
 ```
 
 Serwer automatycznie przechwytuje sygnał zamknięcia i usuwa wszystkie powołane w trakcie pracy kontenery baz danych studentów. Aby usunąć również wolumeny danych: `docker compose down -v`.
-
-## Szczegółowa dokumentacja modułów
-
-Szczegółowe instrukcje konfiguracji i budowania znajdują się w dedykowanych plikach:
-- `Server/README.md` – konfiguracja środowisk bazodanowych, import użytkowników i REST API.
-- `Client/README.md` – kompilacja ze źródeł Maven i tworzenie paczek dystrybucyjnych Universal JAR.
