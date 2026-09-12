@@ -14,12 +14,6 @@ Serwer pośredniczący odpowiedzialny za autoryzację studentów, zarządzanie p
 W katalogu `Server/`:
 
 ```bash
-docker compose up -d --build
-```
-
-lub przy użyciu skryptu pomocniczego:
-
-```bash
 python3 run.py
 ```
 
@@ -33,12 +27,6 @@ Po uruchomieniu serwera dostępne są dwa punkty wejścia:
 ### 3. Zatrzymanie serwera
 
 Aby bezpiecznie zatrzymać wszystkie usługi i powiązane kontenery:
-
-```bash
-docker compose down
-```
-
-lub:
 
 ```bash
 python3 stop.py
