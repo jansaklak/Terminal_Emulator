@@ -24,7 +24,7 @@ services:
     environment:
       TZ: Europe/Warsaw
     ports:
-      - "5001:5001"
+      - "${ADMIN_PORT:-5001}:${ADMIN_PORT:-5001}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/app

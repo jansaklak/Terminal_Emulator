@@ -32,10 +32,11 @@
             "-lc",
             "mkdir -p {database_dir} && if [ ! -f {database_path} ]; then sqlite3 {database_path} < {seed_target}; fi && exec sleep infinity"
         ],
+        "ready_marker": "___READY___",
         "attach_command": [
             "sh",
             "-lc",
-            "echo 'Czekam na uruchomienie SQLite (Pociągi)...'; until [ -f /data/pociagi.db ]; do sleep 1; done; sqlite3 /data/pociagi.db"
+            "echo 'Czekam na uruchomienie SQLite (Pociągi)...'; until [ -f /data/pociagi.db ]; do sleep 1; done; echo '___READY___'; sqlite3 /data/pociagi.db"
         ]
     },
     "description": "SQLite - Pociągi Kolekcjonerskie",

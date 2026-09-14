@@ -20,13 +20,13 @@ cd Server
 docker compose up -d --build
 ```
 
+- **PORT DO POŁĄCZEŃ:** `51234`
+- **ADRES PANELU ADMINISTRATORA:** `http://localhost:5001`
+
 > **Wskazówka (aktualizacja bez pamięci podręcznej):** Aby upewnić się, że po aktualizacji kodu serwer korzysta z najnowszych plików:
 > ```bash
 > docker compose build --no-cache && docker compose up -d --force-recreate
 > ```
-
-- Brama terminalowa TCP nasłuchuje na porcie `51234`.
-- Panel administracyjny jest dostępny pod adresem: `http://localhost:5001`.
 
 ### 2. Uruchomienie klienta
 

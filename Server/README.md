@@ -57,6 +57,6 @@ docker compose down -v
 - `images/` – konfiguracje i skrypty inicjalizacyjne środowisk bazodanowych.
 - `input/` – pliki CSV z listami studentów do automatycznego importu (`Nazwisko;Imie`).
 - `users.json` – baza użytkowników, haseł i przypisanych grup.
-- `server_config.json` – definicja dostępnych środowisk laboratoryjnych.
+- `server_config.json` – konfiguracja serwera (porty TCP i panelu admina `ADMIN_PORT`, strefa czasowa, dane logowania).
 - `commands/` – rejestr historii komend sesji (`.cmds`).
 - `logs/` – logi operacji serwera i sesji użytkowników.

@@ -39,6 +39,15 @@ def get_admin_credentials():
     return user, pwd
 
 
+def get_admin_port():
+    cfg = load_config()
+    raw_port = os.environ.get('ADMIN_PORT') or cfg.get('ADMIN_PORT', 5001)
+    try:
+        return int(raw_port)
+    except (ValueError, TypeError):
+        return 5001
+
+
 @app.before_request
 def check_authentication():
     if request.endpoint in PUBLIC_ENDPOINTS:
@@ -106,7 +115,7 @@ def apply_timezone(tz_name):
 
 
 def load_config():
-    cfg = {'HOST': '0.0.0.0', 'PORT': 51234, 'TIMEZONE': 'Europe/Warsaw', 'CONFIGS': {}}
+    cfg = {'HOST': '0.0.0.0', 'PORT': 51234, 'ADMIN_PORT': 5001, 'TIMEZONE': 'Europe/Warsaw', 'CONFIGS': {}}
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as file_handle:
             cfg.update(json.load(file_handle))
@@ -741,5 +750,9 @@ def start_server_route():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    cfg = load_config()
+    port = get_admin_port()
+    host = os.environ.get('ADMIN_HOST') or cfg.get('ADMIN_HOST', '0.0.0.0')
+    print(f"ADRES PANELU ADMINISTRATORA: http://localhost:{port}", flush=True)
+    app.run(host=host, port=port)
 

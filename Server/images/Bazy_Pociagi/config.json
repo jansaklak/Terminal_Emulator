@@ -47,11 +47,12 @@
             "{seed_sql_host_path}:{seed_target}:ro",
             "{image}"
         ],
+        "ready_marker": "___READY___",
         "_comment_attach_command": "Komenda wykonywana wewnątrz kontenera podczas podłączania terminala użytkownika (oczekiwanie na start bazy i uruchomienie CLI)",
         "attach_command": [
             "sh",
             "-c",
-            "echo 'Czekam na uruchomienie MySQL (Pociągi)...'; i=0; max=30; until mysqladmin ping -h127.0.0.1 -uroot -p{root_password} --silent >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'MySQL nie uruchomił się w czasie' >&2; fi; export MYSQL_PWD={password}; exec mysql -h127.0.0.1 -u{user} {database}"
+            "echo 'Czekam na uruchomienie MySQL (Pociągi)...'; i=0; max=30; until mysqladmin ping -h127.0.0.1 -uroot -p{root_password} --silent >/dev/null 2>&1 || [ \"$i\" -ge \"$max\" ]; do sleep 1; i=$((i+1)); done; if [ \"$i\" -ge \"$max\" ]; then echo 'MySQL nie uruchomił się w czasie' >&2; fi; export MYSQL_PWD={password}; echo '___READY___'; exec mysql -h127.0.0.1 -u{user} {database}"
         ]
     },
     "_comment_description": "Opis obrazu wyświetlany w panelu administracyjnym i kliencie dla użytkownika",

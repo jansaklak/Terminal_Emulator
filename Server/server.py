@@ -60,7 +60,7 @@ def get_live_config():
     Zwraca słownik z kluczami: HOST, PORT, CONFIGS.
     """
     try:
-        base_cfg = {"HOST": "0.0.0.0", "PORT": 51234, "TIMEZONE": "Europe/Warsaw", "CONFIGS": {}}
+        base_cfg = {"HOST": "0.0.0.0", "PORT": 51234, "ADMIN_PORT": 5001, "TIMEZONE": "Europe/Warsaw", "CONFIGS": {}}
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 base_cfg.update(json.load(f))
@@ -85,7 +85,7 @@ def get_live_config():
         msg = f"BŁĄD wczytywania konfiguracji: {e}"
         if 'log' in globals(): log.error(msg)
         else: print(msg)
-        return {"HOST": "0.0.0.0", "PORT": 51234, "CONFIGS": {}}
+        return {"HOST": "0.0.0.0", "PORT": 51234, "ADMIN_PORT": 5001, "CONFIGS": {}}
 
 def get_users():
     """Wczytuje listę użytkowników z pliku `users.json`.
@@ -683,6 +683,15 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
     os.close(slave_fd)
     stop_event = threading.Event()
 
+    # Wykrywanie czy konfiguracja sesji wymaga oczekiwania na sygnał gotowości obrazu (np. ___READY___)
+    ready_marker = session_def.get("ready_marker")
+    if not ready_marker and any("___READY___" in str(arg) for arg in cmd_list):
+        ready_marker = "___READY___"
+
+    session_ready_event = threading.Event()
+    if not ready_marker:
+        session_ready_event.set()
+
     # Blokada do bezpiecznego wysyłania danych przez socket z wielu wątków
     socket_lock = threading.Lock()
     def safe_send(data: bytes):
@@ -695,6 +704,9 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
     # Wykasowanie ekranu terminala przez co użytkownik widzi czysty ekran po połączeniu
     safe_send(b"\x1b[H\x1b[2J")
 
+    ready_marker_bytes = ready_marker.encode('utf-8') if ready_marker else None
+    ready_buffer = bytearray()
+
     def pty_to_tcp():
         while not stop_event.is_set():
             try:
@@ -702,6 +714,13 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                 if r:
                     data = os.read(master_fd, 4096)
                     if not data: break
+                    if not session_ready_event.is_set() and ready_marker_bytes:
+                        ready_buffer.extend(data)
+                        if ready_marker_bytes in ready_buffer:
+                            session_ready_event.set()
+                            ready_buffer.clear()
+                        elif len(ready_buffer) > 256:
+                            ready_buffer[:] = ready_buffer[-128:]
                     safe_send(data)
             except Exception: break
         stop_event.set()
@@ -803,28 +822,43 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                                 with open(session_log.commands_path, 'wb') as cf:
                                     cf.write(file_to_save)
                                 
-                                # opcjonalne natychmiastowe wykonanie
+                                # opcjonalne wykonanie komend po ustabilizowaniu i gotowości obrazu
                                 if payload.get('execute', True):
-                                    # Odcinamy nagłówek przed przekazaniem do PTY
                                     to_exec = strip_cmds_header(raw)
-                                    # Wierne odtworzenie: jeśli są znaki sterujące (np. \r), wysyłamy bajt po bajcie
-                                    # W przeciwnym razie wysyłamy linia po linii.
-                                    if b'\r' in to_exec or b'\x1b' in to_exec or b'\t' in to_exec:
-                                        print("DEBUG: load_commands wykonane bajt po bajcie")
-                                        for i in range(len(to_exec)):
-                                            os.write(master_fd, to_exec[i:i+1])
-                                            # Mały delay dla stabilności (szczególnie przy Tab/Arrows)
-                                            time.sleep(0.01)
-                                    else:
-                                        print("DEBUG: load_commands wykonane linia po lini")
-                                        text = to_exec.decode('utf-8', errors='replace')
-                                        for line in text.splitlines():
-                                            if not line.strip(): continue
-                                            try:
-                                                os.write(master_fd, (line.rstrip('\r\n') + "\n").encode('utf-8'))
-                                                time.sleep(0.15)
-                                            except Exception:
-                                                pass
+                                    ready_timeout = float(session_def.get("ready_timeout", 60.0))
+
+                                    def replay_worker(cmds_to_run):
+                                        try:
+                                            # Jeśli obraz definiuje sygnał gotowości, czekamy na jego odebranie
+                                            if not session_ready_event.wait(timeout=ready_timeout):
+                                                log.warning("Ostrzeżenie: Timeout oczekiwania na sygnał gotowości obrazu przed odtworzeniem komend")
+                                            # Bezpieczne odczekanie 1 sekundy po otrzymaniu sygnału gotowości
+                                            time.sleep(1.0)
+                                            if stop_event.is_set():
+                                                return
+
+                                            if b'\r' in cmds_to_run or b'\x1b' in cmds_to_run or b'\t' in cmds_to_run:
+                                                for i in range(len(cmds_to_run)):
+                                                    if stop_event.is_set():
+                                                        break
+                                                    os.write(master_fd, cmds_to_run[i:i+1])
+                                                    time.sleep(0.01)
+                                            else:
+                                                text = cmds_to_run.decode('utf-8', errors='replace')
+                                                for line in text.splitlines():
+                                                    if stop_event.is_set():
+                                                        break
+                                                    if not line.strip():
+                                                        continue
+                                                    try:
+                                                        os.write(master_fd, (line.rstrip('\r\n') + "\n").encode('utf-8'))
+                                                        time.sleep(0.15)
+                                                    except Exception:
+                                                        pass
+                                        except Exception as err:
+                                            log.error("Błąd podczas odtwarzania komend: %s", err)
+
+                                    threading.Thread(target=replay_worker, args=(to_exec,), daemon=True).start()
                             except Exception as e:
                                 print(f"DEBUG: load_commands error: {e}")
                                 continue
@@ -1028,6 +1062,9 @@ def main():
     server_sock.bind((HOST, PORT))
     server_sock.listen(50)
     log.info("Brama Terminalowa nasłuchuje na %s:%d", HOST, PORT)
+    admin_p = initial_cfg.get("ADMIN_PORT", 5001)
+    print(f"PORT DO POŁĄCZEŃ: {PORT}", flush=True)
+    print(f"ADRES PANELU ADMINISTRATORA: http://localhost:{admin_p}", flush=True)
 
     try:
         while True:

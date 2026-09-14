@@ -92,15 +92,15 @@ public class TerminalApp extends Application {
 
         root.setStyle("-fx-background-color: " + bgColor + ";");
 
-        Button restartBtn = new Button("⟳ Reset");
-        Button clearBtn = new Button("Clear");
+        Button restartBtn = new Button("Zresetuj stan");
+        Button clearBtn = new Button("Wyczyść ekran");
         restartBtn.setStyle(btnStyle);
         clearBtn.setStyle(btnStyle);
         Button zoomInBtn = new Button("+");
         zoomInBtn.setStyle(btnStyle);
         Button zoomOutBtn = new Button("-");
         zoomOutBtn.setStyle(btnStyle);
-        Button saveCmdBtn = new Button("Save cmds");
+        Button saveCmdBtn = new Button("Zapisz stan");
         saveCmdBtn.setStyle(btnStyle);
 
         saveCmdBtn.setDisable(!canRecordCommands);
