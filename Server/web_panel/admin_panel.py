@@ -1,5 +1,6 @@
 import csv
 import datetime
+import html
 import json
 import os
 import socket
@@ -348,6 +349,59 @@ def bulk_update_images_access():
 @app.route('/api/users')
 def get_users_api():
     return jsonify(load_users())
+
+
+@app.route('/print_users')
+def print_users():
+    user = session.get('admin_user')
+    if not user:
+        return redirect('/login')
+
+    users = load_users()
+    group = request.args.get('group')
+    group_header = ""
+    if group and group != 'all':
+        users = {u: d for u, d in users.items() if group in d.get('groups', [])}
+        group_header = f'<div class="group-header">Grupa: {html.escape(group)}</div>'
+
+    slips = []
+    sorted_users = sorted(users.values(), key=lambda x: (x.get('display_name') or x.get('username', '')).lower())
+    for u in sorted_users:
+        name = (u.get('display_name') or u.get('username', '')).replace('_', ' ')
+        login = u.get('username', '')
+        pwd = u.get('password', '')
+        slips.append(f"""
+        <div class="slip">
+            <div class="name">{html.escape(name)}</div>
+            <div class="row">Login: <span class="code">{html.escape(login)}</span></div>
+            <div class="row">Hasło: <span class="code">{html.escape(pwd)}</span></div>
+        </div>""")
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Paski logowania{f' - {html.escape(group)}' if group and group != 'all' else ''}</title>
+    <style>
+        @page {{ size: A4; margin: 10mm; }}
+        * {{ box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 10px; color: #000; background: #fff; }}
+        .group-header {{ font-size: 13px; color: #555; margin-bottom: 12px; font-weight: 600; }}
+        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8mm; }}
+        .slip {{ border: 1.5px dashed #000; border-radius: 4px; padding: 14px 18px; box-sizing: border-box; page-break-inside: avoid; break-inside: avoid; }}
+        .name {{ font-size: 16px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }}
+        .row {{ margin: 4px 0; font-size: 14px; }}
+        .code {{ font-family: monospace; font-size: 15px; font-weight: bold; }}
+    </style>
+</head>
+<body>
+    {group_header}
+    <div class="grid">
+        {"".join(slips)}
+    </div>
+</body>
+</html>"""
+    return html_content
 
 
 @app.route('/api/users', methods=['POST'])

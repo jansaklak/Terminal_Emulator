@@ -62,3 +62,6 @@ Server/commands/*/*.cmds
 .settings/
 .DS_Store
 **/.DS_Store
+
+praca.tex
+praca.pdf

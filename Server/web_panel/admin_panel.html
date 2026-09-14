@@ -916,7 +916,10 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">Baza Użytkowników</h2>
-                    <button class="btn btn-secondary btn-sm" onclick="loadAll()">Odśwież</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="printUsersHtml()" title="Otwórz czysty plik HTML z danymi logowania do wydruku">Wydrukuj dane logowania</button>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAll()">Odśwież</button>
+                    </div>
                 </div>
 
                 <!-- FILTERS -->
@@ -950,6 +953,7 @@
                             zaznaczenie</button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="printUsersHtml(true)">Wydrukuj dane logowania</button>
                         <button type="button" class="btn btn-sm" onclick="executeBulkAddGroup()">Dodaj zaznaczonych do
                             grupy</button>
                         <button type="button" class="btn btn-danger btn-sm" onclick="executeBulkDelete()">Usuń
@@ -1068,18 +1072,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px;">
-                    <div style="font-size: 11px; color: var(--muted-color);">
-                        Pamiętaj: Po dokonaniu zmian kliknij przycisk <strong>Zapisz zmiany w macierzy</strong>, aby
-                        zaktualizować pliki konfiguracyjne środowisk.
-                    </div>
-                    <button type="button" class="btn" onclick="savePermissionsMatrix()"
-                        style="padding: 9px 20px; font-weight: 600;">
-                        Zapisz zmiany w macierzy
-                    </button>
                 </div>
             </div>
         </div>
@@ -2246,6 +2238,85 @@
             } catch (e) {
                 console.error("Błąd pobierania logu", e);
             }
+        }
+
+        function printUsersHtml(onlySelected = false) {
+            let users = getAllUsers();
+            let groupName = '';
+            const groupFilter = document.getElementById('groupFilter');
+            const selectedGroup = groupFilter ? groupFilter.value : 'all';
+
+            if (onlySelected && selectedUsernames.size > 0) {
+                users = users.filter(u => selectedUsernames.has(u.username));
+                if (selectedGroup && selectedGroup !== 'all') {
+                    groupName = selectedGroup;
+                } else {
+                    const groupSet = new Set();
+                    users.forEach(u => (u.groups || []).forEach(g => groupSet.add(g)));
+                    if (groupSet.size === 1) {
+                        groupName = Array.from(groupSet)[0];
+                    }
+                }
+            } else {
+                if (selectedGroup && selectedGroup !== 'all') {
+                    users = users.filter(u => (u.groups || []).includes(selectedGroup));
+                    groupName = selectedGroup;
+                }
+            }
+
+            if (!users.length) {
+                alert('Brak użytkowników do wydruku.');
+                return;
+            }
+
+            users.sort((a, b) => {
+                const nameA = (a.display_name || a.username || '').toLowerCase();
+                const nameB = (b.display_name || b.username || '').toLowerCase();
+                return nameA.localeCompare(nameB, 'pl');
+            });
+
+            const headerHtml = groupName
+                ? `<div class="group-header">Grupa: ${escapeHtml(groupName)}</div>`
+                : '';
+
+            const slips = users.map(u => {
+                const name = (u.display_name || u.username || '').replace(/_/g, ' ');
+                return `
+        <div class="slip">
+            <div class="name">${escapeHtml(name)}</div>
+            <div class="row">Login: <span class="code">${escapeHtml(u.username || '')}</span></div>
+            <div class="row">Hasło: <span class="code">${escapeHtml(u.password || '')}</span></div>
+        </div>`;
+            }).join('');
+
+            const htmlContent = `<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Paski logowania${groupName ? ' - ' + escapeHtml(groupName) : ''}</title>
+    <style>
+        @page { size: A4; margin: 10mm; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 10px; color: #000; background: #fff; }
+        .group-header { font-size: 13px; color: #555; margin-bottom: 12px; font-weight: 600; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8mm; }
+        .slip { border: 1.5px dashed #000; border-radius: 4px; padding: 14px 18px; page-break-inside: avoid; break-inside: avoid; }
+        .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+        .row { margin: 4px 0; font-size: 14px; }
+        .code { font-family: monospace; font-size: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    ${headerHtml}
+    <div class="grid">
+        ${slips}
+    </div>
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
         }
 
         async function logoutAdmin() {
