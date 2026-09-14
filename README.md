@@ -25,7 +25,7 @@ docker compose up -d --build
 
 > **Wskazówka (aktualizacja bez pamięci podręcznej):** Aby upewnić się, że po aktualizacji kodu serwer korzysta z najnowszych plików:
 > ```bash
-> docker compose build --no-cache && docker compose up -d --force-recreate
+> docker compose down && docker compose build --no-cache && docker compose up -d
 > ```
 
 ### 2. Uruchomienie klienta

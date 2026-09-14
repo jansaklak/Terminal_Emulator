@@ -17,7 +17,7 @@ docker compose up -d --build
 ### Tryb czystego uruchomienia
 
 ```bash
-docker compose build --no-cache && docker compose up -d --force-recreate
+docker compose down && docker compose build --no-cache && docker compose up -d
 ```
 
 ---
