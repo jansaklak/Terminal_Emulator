@@ -44,9 +44,6 @@
         ]
     },
     "description": "MySQL labdb (root)",
-    "access_all": false,
-    "allowed_groups": [
-        "bazy1",
-        "bazy2"
-    ]
+    "access_all": true,
+    "allowed_groups": []
 }

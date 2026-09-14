@@ -42,8 +42,6 @@
         ]
     },
     "description": "PostgreSQL - Laboratorium",
-    "access_all": false,
-    "allowed_groups": [
-        "bazy1"
-    ]
+    "access_all": true,
+    "allowed_groups": []
 }

@@ -40,8 +40,6 @@
         ]
     },
     "description": "SQLite - Pociągi Kolekcjonerskie",
-    "access_all": false,
-    "allowed_groups": [
-        "bazy3"
-    ]
+    "access_all": true,
+    "allowed_groups": []
 }
