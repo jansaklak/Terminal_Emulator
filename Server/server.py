@@ -239,6 +239,11 @@ class SessionLogger:
                     i += 1
                     continue
 
+                if b == 0x17:
+                    self.buf = self.buf.rstrip().rsplit(" ", 1)[0] if " " in self.buf.rstrip() else ""
+                    i += 1
+                    continue
+
                 # Zwykłe drukowalne znaki (ASCII i UTF-8)
                 if b >= 32:
                     char_len = 1

@@ -181,14 +181,14 @@ public class TerminalApp extends Application {
                             }
                             Platform.runLater(() -> {
                                 saveCmdBtn.setDisable(false);
-                                saveCmdBtn.setText("Save cmds");
+                                saveCmdBtn.setText("Zapisz stan");
                                 swingNode.requestFocus();
                             });
                         } catch (Exception ex) {
                             ex.printStackTrace();
                             Platform.runLater(() -> {
                                 saveCmdBtn.setDisable(false);
-                                saveCmdBtn.setText("Save cmds");
+                                saveCmdBtn.setText("Zapisz stan");
                                 new Alert(Alert.AlertType.ERROR, "Błąd zapisu: " + ex.getMessage()).show();
                             });
                         }
