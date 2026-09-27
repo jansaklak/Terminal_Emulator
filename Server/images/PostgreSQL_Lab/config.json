@@ -32,7 +32,11 @@
             "{data_volume}:/var/lib/postgresql/data",
             "-v",
             "{seed_sql_host_path}:{seed_target}:ro",
-            "{image}"
+            "--entrypoint",
+            "sh",
+            "{image}",
+            "-c",
+            "rm -f /var/lib/postgresql/data/postmaster.pid && exec docker-entrypoint.sh postgres"
         ],
         "ready_marker": "___READY___",
         "attach_command": [

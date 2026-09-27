@@ -156,21 +156,43 @@ public class SocketTtyConnector implements TtyConnector {
 
     @Override
     public void write(String string) throws IOException {
-        out.write(string.getBytes(StandardCharsets.UTF_8));
-        out.flush();
+        if (!isConnected()) {
+            return;
+        }
+        try {
+            out.write(string.getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        } catch (IOException e) {
+            close();
+            throw e;
+        }
     }
 
     @Override
     public void write(byte[] bytes) throws IOException {
-        out.write(bytes);
-        out.flush();
+        if (!isConnected()) {
+            return;
+        }
+        try {
+            out.write(bytes);
+            out.flush();
+        } catch (IOException e) {
+            close();
+            throw e;
+        }
     }
 
     public void requestReset() throws IOException {
+        if (!isConnected()) {
+            return;
+        }
         write(RESET_CONTROL);
     }
 
     public void requestClear() throws IOException {
+        if (!isConnected()) {
+            return;
+        }
         write(CLEAR_CONTROL);
     }
 

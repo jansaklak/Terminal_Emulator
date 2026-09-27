@@ -8,6 +8,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -16,6 +17,8 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -129,24 +132,6 @@ public class TerminalApp extends Application {
             widget.setTtyConnector(connector);
             widget.setPreferredSize(new Dimension(1000, 680));
             swingNode.setContent(widget);
-            
-            /* 
-            // --- LOGIKA PRZECHWYTYWANIA KOMEND Z EKRANU ---
-            // Wyłączone na rzecz surowego logowania po stronie serwera (wierniejsze odtwarzanie)
-            widget.getTerminalPanel().addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                        String command = getFullCommandLine(widget);
-                        if (command != null && !command.isEmpty() && canRecordCommands) {
-                            try {
-                                connector.requestAppendCommand(command);
-                            } catch (Exception ex) { ex.printStackTrace(); }
-                        }
-                    }
-                }
-            });
-            */
 
             widget.start();
             widget.requestFocusInWindow();
@@ -225,7 +210,13 @@ public class TerminalApp extends Application {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == takBtn) {
-                try { connector.requestReset(); } catch (Exception ex) { ex.printStackTrace(); }
+                try {
+                    if (connector.isConnected()) {
+                        connector.requestReset();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
                 connector.close();
                 stage.close();
                 Platform.runLater(() -> {
@@ -236,9 +227,46 @@ public class TerminalApp extends Application {
         });
 
         clearBtn.setOnAction(e -> {
-            try { connector.requestClear(); } catch (Exception ex) { ex.printStackTrace(); }
+            try {
+                if (connector.isConnected()) {
+                    connector.requestClear();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
             swingNode.requestFocus();
         });
+
+        // Wątek monitorujący stan połączenia - natychmiastowe powiadomienie użytkownika o rozłączeniu
+        Thread disconnectWatcher = new Thread(() -> {
+            try {
+                connector.waitFor();
+            } catch (InterruptedException ignored) {
+                return;
+            }
+            Platform.runLater(() -> {
+                stage.setTitle("Terminal – " + username + " [ROZŁĄCZONO]");
+                HBox banner = new HBox(15);
+                banner.setAlignment(Pos.CENTER);
+                banner.setPadding(new Insets(8, 12, 8, 12));
+                banner.setStyle("-fx-background-color: #f38ba8;");
+                Label msg = new Label("⚠️ Połączenie z serwerem zostało zakończone.");
+                msg.setStyle("-fx-text-fill: #11111b; -fx-font-weight: bold; -fx-font-size: 13px;");
+                Button reloginBtn = new Button("Zaloguj ponownie");
+                reloginBtn.setStyle("-fx-background-color: #11111b; -fx-text-fill: #cdd6f4; -fx-cursor: hand; -fx-font-weight: bold;");
+                reloginBtn.setOnAction(ev -> {
+                    connector.close();
+                    stage.close();
+                    new LoginScreen(new Stage(), this).show();
+                });
+                banner.getChildren().addAll(msg, reloginBtn);
+                root.setBottom(banner);
+                saveCmdBtn.setDisable(true);
+                clearBtn.setDisable(true);
+            });
+        });
+        disconnectWatcher.setDaemon(true);
+        disconnectWatcher.start();
 
         stage.setOnCloseRequest(e -> connector.close());
         stage.setScene(new Scene(root, 1000, 720));

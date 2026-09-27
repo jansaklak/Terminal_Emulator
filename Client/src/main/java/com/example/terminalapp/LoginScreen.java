@@ -155,6 +155,8 @@ public class LoginScreen {
             new Thread(() -> {
                 try {
                     Socket socket = new Socket(host, port);
+                    socket.setKeepAlive(true);
+                    socket.setTcpNoDelay(true);
                     PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 

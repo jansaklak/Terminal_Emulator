@@ -19,6 +19,8 @@
             "{container_name}",
             "--hostname",
             "{hostname}",
+            "-w",
+            "{workdir}",
             "-v",
             "{data_volume}:{mount_path}",
             "{image}",

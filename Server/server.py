@@ -433,6 +433,16 @@ def build_session_context(username: str, container_name: str, host_project_path:
         img_sql_path = resolve_host_path(clean_img_base, raw_sql_path).lstrip("/\\")
         context["seed_sql_host_path"] = resolve_host_path(host_project_path, img_sql_path)
 
+    raw_seed_dir = session.get("seed_dir")
+    if raw_seed_dir:
+        clean_img_base = img_base
+        if clean_img_base.startswith("/app/"):
+            clean_img_base = clean_img_base[len("/app/"):].lstrip("/\\")
+        elif clean_img_base == "/app":
+            clean_img_base = ""
+        img_seed_path = resolve_host_path(clean_img_base, raw_seed_dir).lstrip("/\\")
+        context["seed_dir_host_path"] = resolve_host_path(host_project_path, img_seed_path)
+
     return context
 
 
@@ -472,6 +482,22 @@ def remove_docker_volume(volume_name: str) -> None:
         raise RuntimeError(remove_result.stderr.strip() or f"Nie udało się usunąć wolumenu {volume_name}")
 
 
+def seed_container_dir(container_name: str, config: dict, seed_dir_name: str, mount_path: str) -> None:
+    # Kopiuje pliki z katalogu seed_dir (np. shared/) do docelowej ścieżki kontenera.
+    img_base = config.get("_img_path", "")
+    if not img_base:
+        return
+    local_seed_dir = Path(img_base) / seed_dir_name
+    if local_seed_dir.exists() and any(local_seed_dir.iterdir()):
+        cp_src = f"{local_seed_dir}/."
+        cp_dst = f"{container_name}:{mount_path}/"
+        cp_res = run_docker_command(["cp", cp_src, cp_dst])
+        if cp_res.returncode != 0:
+            log.warning("Nie udało się skopiować plików z %s do %s: %s", cp_src, cp_dst, cp_res.stderr.strip())
+        else:
+            log.info("Zainicjalizowano pliki z %s w kontenerze %s:%s", cp_src, container_name, mount_path)
+
+
 def ensure_session_container(username: str, host_project_path: str, config: dict) -> str:
     # Tworzy (lub uruchamia istniejący) kontener sesji dla użytkownika zgodnie z konfiguracją obrazu.
     session = get_session_definition(config)
@@ -489,6 +515,12 @@ def ensure_session_container(username: str, host_project_path: str, config: dict
             start_result = run_docker_command(["start", container_name])
             if start_result.returncode != 0:
                 raise RuntimeError(start_result.stderr.strip() or f"Nie udało się uruchomić kontenera {container_name}")
+        seed_dir_name = session.get("seed_dir")
+        if seed_dir_name:
+            mount_path = session.get("mount_path", "/shared_data")
+            check_res = run_docker_command(["exec", container_name, "sh", "-c", f"ls -A '{mount_path}' 2>/dev/null"])
+            if check_res.returncode == 0 and not check_res.stdout.strip():
+                seed_container_dir(container_name, config, seed_dir_name, mount_path)
         return container_name
 
     run_command = session.get("run_command")
@@ -499,6 +531,11 @@ def ensure_session_container(username: str, host_project_path: str, config: dict
     create_result = run_docker_command(run_args)
     if create_result.returncode != 0:
         raise RuntimeError(create_result.stderr.strip() or f"Nie udało się utworzyć kontenera {container_name}")
+
+    seed_dir_name = session.get("seed_dir")
+    if seed_dir_name:
+        mount_path = session.get("mount_path", "/shared_data")
+        seed_container_dir(container_name, config, seed_dir_name, mount_path)
 
     return container_name
 
@@ -600,7 +637,12 @@ def build_attach_command(username: str, container_name: str, config: dict) -> li
         raise RuntimeError(f"Konfiguracja {session.get('base_name', 'session')} nie definiuje attach_command")
 
     command = render_template(attach_template, context)
-    return ["docker", "exec", "-it", container_name, *command]
+    exec_args = ["docker", "exec", "-it"]
+    workdir = session.get("workdir")
+    if workdir:
+        exec_args.extend(["-w", str(workdir)])
+    exec_args.extend([container_name, *command])
+    return exec_args
 
 
 def shutdown_session(pid: int, master_fd: int, conn: socket.socket, stop_event: threading.Event, session_log: SessionLogger, username: str, config_name: str) -> None:
@@ -713,7 +755,9 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                 r, _, _ = select.select([master_fd], [], [], 0.05)
                 if r:
                     data = os.read(master_fd, 4096)
-                    if not data: break
+                    if not data:
+                        log.info("Wątek PTY odebrał EOF (proces kontenera zakończony) dla %s (%s)", username, config_name)
+                        break
                     if not session_ready_event.is_set() and ready_marker_bytes:
                         ready_buffer.extend(data)
                         if ready_marker_bytes in ready_buffer:
@@ -722,7 +766,9 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
                         elif len(ready_buffer) > 256:
                             ready_buffer[:] = ready_buffer[-128:]
                     safe_send(data)
-            except Exception: break
+            except Exception as err:
+                log.info("Zakończono czytanie z PTY dla %s (%s): %s", username, config_name, err)
+                break
         stop_event.set()
 
     # Wątek czytający z PTY i wysyłający do klienta
@@ -885,11 +931,13 @@ def run_session(conn: socket.socket, addr, username: str, config_name: str, cmd_
 
                 session_log.feed(data)
                 os.write(master_fd, data)
-            except socket.timeout: continue
-            except Exception: break
+            except socket.timeout:
+                continue
+            except Exception as e:
+                log.info("Zakończono pętlę wejścia klienta dla %s (%s): %s", username, config_name, e)
+                break
     finally:
-        if not stop_event.is_set():
-            shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
+        shutdown_session(pid, master_fd, conn, stop_event, session_log, username, config_name)
         log.info("Koniec sesji: użytkownik=%s konf=%s", username, config_name)
 
 def is_config_allowed_for_user(img_cfg: dict, user_groups: set) -> bool:
@@ -1069,6 +1117,19 @@ def main():
     try:
         while True:
             conn, addr = server_sock.accept()
+            try:
+                conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                if hasattr(socket, 'TCP_KEEPIDLE'):
+                    conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+                elif hasattr(socket, 'TCP_KEEPALIVE'):
+                    conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 30)
+                if hasattr(socket, 'TCP_KEEPINTVL'):
+                    conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
+                if hasattr(socket, 'TCP_KEEPCNT'):
+                    conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
+            except Exception as e:
+                log.warning("Nie udało się skonfigurować TCP keepalive dla połączenia: %s", e)
             threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
     except KeyboardInterrupt:
         log.info("Zamykanie serwera.")
